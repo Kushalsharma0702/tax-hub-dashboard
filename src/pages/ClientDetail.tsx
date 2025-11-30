@@ -16,8 +16,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockClients, mockDocuments, mockPayments, mockNotes, mockAdmins } from '@/data/mockData';
-import { STATUS_LABELS, ClientStatus, PERMISSIONS } from '@/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { mockClients, mockDocuments, mockPayments, mockNotes } from '@/data/mockData';
+import { STATUS_LABELS, ClientStatus, PERMISSIONS, Note, Document as DocType } from '@/types';
 import {
   User,
   Mail,
@@ -29,8 +47,10 @@ import {
   Clock,
   Edit,
   ArrowLeft,
-  Upload,
   Send,
+  Trash2,
+  Loader2,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -38,21 +58,28 @@ import { useToast } from '@/hooks/use-toast';
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { hasPermission, isSuperAdmin } = useAuth();
+  const { hasPermission, user } = useAuth();
   const { toast } = useToast();
 
-  const client = mockClients.find((c) => c.id === id);
-  const documents = mockDocuments.filter((d) => d.clientId === id);
-  const payments = mockPayments.filter((p) => p.clientId === id);
-  const notes = mockNotes.filter((n) => n.clientId === id);
+  const [client, setClient] = useState(() => mockClients.find((c) => c.id === id));
+  const [documents, setDocuments] = useState(() => mockDocuments.filter((d) => d.clientId === id));
+  const [payments, setPayments] = useState(() => mockPayments.filter((p) => p.clientId === id));
+  const [notes, setNotes] = useState<Note[]>(() => mockNotes.filter((n) => n.clientId === id));
 
   const [newNote, setNewNote] = useState('');
   const [isClientFacing, setIsClientFacing] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
+  const [isDeleteDocOpen, setIsDeleteDocOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<DocType | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   if (!client) {
     return (
       <DashboardLayout title="Client Not Found" breadcrumbs={[{ label: 'Clients', href: '/clients' }]}>
-        <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
+        <div className="flex flex-col items-center justify-center h-[50vh] gap-4 animate-fade-in">
           <p className="text-muted-foreground">The client you're looking for doesn't exist.</p>
           <Button onClick={() => navigate('/clients')}>Back to Clients</Button>
         </div>
@@ -60,19 +87,132 @@ export default function ClientDetail() {
     );
   }
 
-  const handleAddNote = () => {
-    if (!newNote.trim()) return;
+  const handleAddNote = async () => {
+    if (!newNote.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a note.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const note: Note = {
+      id: String(Date.now()),
+      clientId: client.id,
+      authorId: user?.id || '1',
+      authorName: user?.name || 'Admin',
+      content: newNote,
+      isClientFacing,
+      createdAt: new Date(),
+    };
+
+    setNotes([note, ...notes]);
+    setNewNote('');
+    setIsLoading(false);
     toast({
       title: 'Note Added',
       description: isClientFacing ? 'Client-facing note has been added.' : 'Internal note has been added.',
     });
-    setNewNote('');
   };
 
-  const handleStatusUpdate = (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: string) => {
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    setClient({ ...client, status: newStatus as ClientStatus });
+    setIsLoading(false);
     toast({
       title: 'Status Updated',
       description: `Client status changed to ${STATUS_LABELS[newStatus as ClientStatus]}.`,
+    });
+  };
+
+  const handleEditClient = async () => {
+    if (!editForm.name || !editForm.email) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setClient({ ...client, name: editForm.name, email: editForm.email, phone: editForm.phone });
+    setIsEditOpen(false);
+    setIsLoading(false);
+    toast({
+      title: 'Client Updated',
+      description: 'Client information has been updated successfully.',
+    });
+  };
+
+  const handleAddPayment = async () => {
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: 'Invalid Amount',
+        description: 'Please enter a valid payment amount.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const payment = {
+      id: String(Date.now()),
+      clientId: client.id,
+      amount,
+      method: 'Credit Card',
+      reference: `PAY-${Date.now()}`,
+      note: '',
+      createdAt: new Date(),
+      createdBy: user?.name || 'Admin',
+    };
+
+    setPayments([payment, ...payments]);
+    setClient({ 
+      ...client, 
+      paidAmount: client.paidAmount + amount,
+      paymentStatus: client.paidAmount + amount >= client.totalAmount ? 'paid' : 'partial',
+    });
+    setPaymentAmount('');
+    setIsAddPaymentOpen(false);
+    setIsLoading(false);
+    toast({
+      title: 'Payment Recorded',
+      description: `$${amount.toFixed(2)} payment has been recorded.`,
+    });
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!selectedDoc) return;
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setDocuments(prev => prev.filter(d => d.id !== selectedDoc.id));
+    setIsDeleteDocOpen(false);
+    setSelectedDoc(null);
+    setIsLoading(false);
+    toast({
+      title: 'Document Deleted',
+      description: 'The document has been removed.',
+    });
+  };
+
+  const handleRequestDocument = () => {
+    toast({
+      title: 'Request Sent',
+      description: 'Document request has been sent to the client.',
     });
   };
 
@@ -85,16 +225,23 @@ export default function ClientDetail() {
         { label: client.name },
       ]}
     >
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         {/* Back Button & Actions */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/clients')}>
+          <Button variant="ghost" onClick={() => navigate('/clients')} className="transition-all duration-200 hover:translate-x-[-4px]">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Clients
           </Button>
           <div className="flex gap-2">
             {hasPermission(PERMISSIONS.ADD_EDIT_CLIENT) && (
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setEditForm({ name: client.name, email: client.email, phone: client.phone });
+                  setIsEditOpen(true);
+                }}
+                className="transition-all duration-200 hover:scale-105"
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Client
               </Button>
@@ -105,7 +252,7 @@ export default function ClientDetail() {
         {/* Client Overview */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Info */}
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Client Information</span>
@@ -114,42 +261,26 @@ export default function ClientDetail() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <User className="h-5 w-5 text-primary" />
+                {[
+                  { icon: User, label: 'Full Name', value: client.name },
+                  { icon: Mail, label: 'Email', value: client.email },
+                  { icon: Phone, label: 'Phone', value: client.phone },
+                  { icon: Calendar, label: 'Filing Year', value: client.filingYear },
+                ].map((item, index) => (
+                  <div 
+                    key={item.label}
+                    className="flex items-center gap-3 p-2 rounded-lg transition-all duration-200 hover:bg-muted/30"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <item.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{item.label}</p>
+                      <p className="font-medium">{item.value}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Full Name</p>
-                    <p className="font-medium">{client.name}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Mail className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{client.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Phone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-medium">{client.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Filing Year</p>
-                    <p className="font-medium">{client.filingYear}</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               {/* Workflow Status Update */}
@@ -172,7 +303,7 @@ export default function ClientDetail() {
           </Card>
 
           {/* Payment Summary */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
@@ -198,7 +329,12 @@ export default function ClientDetail() {
                 <StatusBadge status={client.paymentStatus} type="payment" />
               </div>
               {hasPermission(PERMISSIONS.ADD_EDIT_PAYMENT) && (
-                <Button className="w-full" variant="outline">
+                <Button 
+                  className="w-full transition-all duration-200 hover:scale-[1.02]" 
+                  variant="outline"
+                  onClick={() => setIsAddPaymentOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Payment
                 </Button>
               )}
@@ -209,30 +345,30 @@ export default function ClientDetail() {
         {/* Tabs Section */}
         <Tabs defaultValue="documents" className="w-full">
           <TabsList>
-            <TabsTrigger value="documents">
+            <TabsTrigger value="documents" className="transition-all duration-200">
               <FileText className="h-4 w-4 mr-2" />
               Documents ({documents.length})
             </TabsTrigger>
-            <TabsTrigger value="payments">
+            <TabsTrigger value="payments" className="transition-all duration-200">
               <CreditCard className="h-4 w-4 mr-2" />
               Payments ({payments.length})
             </TabsTrigger>
-            <TabsTrigger value="notes">
+            <TabsTrigger value="notes" className="transition-all duration-200">
               <MessageSquare className="h-4 w-4 mr-2" />
               Notes ({notes.length})
             </TabsTrigger>
-            <TabsTrigger value="timeline">
+            <TabsTrigger value="timeline" className="transition-all duration-200">
               <Clock className="h-4 w-4 mr-2" />
               Timeline
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="documents" className="mt-4">
+          <TabsContent value="documents" className="mt-4 animate-fade-in">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Documents</CardTitle>
                 {hasPermission(PERMISSIONS.REQUEST_DOCUMENTS) && (
-                  <Button size="sm">
+                  <Button size="sm" onClick={handleRequestDocument} className="transition-all duration-200 hover:scale-105">
                     <Send className="h-4 w-4 mr-2" />
                     Request Missing
                   </Button>
@@ -243,10 +379,11 @@ export default function ClientDetail() {
                   {documents.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">No documents uploaded yet.</p>
                   ) : (
-                    documents.map((doc) => (
+                    documents.map((doc, index) => (
                       <div
                         key={doc.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30 transition-all duration-200 hover:bg-muted/50"
+                        style={{ animationDelay: `${index * 50}ms` }}
                       >
                         <div className="flex items-center gap-3">
                           <FileText className="h-5 w-5 text-primary" />
@@ -257,7 +394,20 @@ export default function ClientDetail() {
                             </p>
                           </div>
                         </div>
-                        <StatusBadge status={doc.status} type="document" />
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={doc.status} type="document" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedDoc(doc);
+                              setIsDeleteDocOpen(true);
+                            }}
+                            className="text-destructive hover:text-destructive transition-all duration-200 hover:scale-105"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))
                   )}
@@ -266,7 +416,7 @@ export default function ClientDetail() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="payments" className="mt-4">
+          <TabsContent value="payments" className="mt-4 animate-fade-in">
             <Card>
               <CardHeader>
                 <CardTitle>Payment History</CardTitle>
@@ -276,10 +426,11 @@ export default function ClientDetail() {
                   {payments.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">No payments recorded yet.</p>
                   ) : (
-                    payments.map((payment) => (
+                    payments.map((payment, index) => (
                       <div
                         key={payment.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30 transition-all duration-200 hover:bg-muted/50"
+                        style={{ animationDelay: `${index * 50}ms` }}
                       >
                         <div>
                           <p className="font-medium">${payment.amount}</p>
@@ -296,7 +447,7 @@ export default function ClientDetail() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notes" className="mt-4">
+          <TabsContent value="notes" className="mt-4 animate-fade-in">
             <Card>
               <CardHeader>
                 <CardTitle>Notes</CardTitle>
@@ -308,9 +459,10 @@ export default function ClientDetail() {
                     placeholder="Add a note..."
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
+                    className="transition-all duration-200 focus:scale-[1.01]"
                   />
                   <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
                         type="checkbox"
                         checked={isClientFacing}
@@ -319,14 +471,21 @@ export default function ClientDetail() {
                       />
                       Client-facing note
                     </label>
-                    <Button size="sm" onClick={handleAddNote}>Add Note</Button>
+                    <Button size="sm" onClick={handleAddNote} disabled={isLoading} className="transition-all duration-200 hover:scale-105">
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Add Note
+                    </Button>
                   </div>
                 </div>
 
                 {/* Notes List */}
                 <div className="space-y-3">
-                  {notes.map((note) => (
-                    <div key={note.id} className="p-3 rounded-lg bg-muted/30">
+                  {notes.map((note, index) => (
+                    <div 
+                      key={note.id} 
+                      className="p-3 rounded-lg bg-muted/30 transition-all duration-200 hover:bg-muted/50"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <p className="font-medium text-sm">{note.authorName}</p>
@@ -346,7 +505,7 @@ export default function ClientDetail() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="timeline" className="mt-4">
+          <TabsContent value="timeline" className="mt-4 animate-fade-in">
             <Card>
               <CardHeader>
                 <CardTitle>Activity Timeline</CardTitle>
@@ -355,7 +514,7 @@ export default function ClientDetail() {
                 <div className="space-y-4">
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className="h-3 w-3 rounded-full bg-primary" />
+                      <div className="h-3 w-3 rounded-full bg-primary animate-pulse" />
                       <div className="w-px h-full bg-border" />
                     </div>
                     <div className="pb-4">
@@ -382,6 +541,100 @@ export default function ClientDetail() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Client Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="animate-scale-in">
+            <DialogHeader>
+              <DialogTitle>Edit Client</DialogTitle>
+              <DialogDescription>Update client information.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Full Name *</Label>
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+              <Button onClick={handleEditClient} disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Payment Dialog */}
+        <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
+          <DialogContent className="animate-scale-in">
+            <DialogHeader>
+              <DialogTitle>Record Payment</DialogTitle>
+              <DialogDescription>Enter the payment amount received from {client.name}.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Amount ($)</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Outstanding balance: <strong>${client.totalAmount - client.paidAmount}</strong>
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddPaymentOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddPayment} disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Record Payment
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Document Confirmation */}
+        <AlertDialog open={isDeleteDocOpen} onOpenChange={setIsDeleteDocOpen}>
+          <AlertDialogContent className="animate-scale-in">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Document</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <strong>{selectedDoc?.name}</strong>? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteDocument}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );

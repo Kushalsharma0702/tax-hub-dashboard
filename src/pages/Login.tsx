@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import logo from '@/assets/logo.png';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -43,12 +43,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logo} alt="TaxPro" className="h-16 w-16" />
+            <img src={logo} alt="TaxEase" className="h-16 w-16 animate-scale-in" />
           </div>
-          <CardTitle className="text-2xl font-bold">TaxPro Admin</CardTitle>
+          <CardTitle className="text-2xl font-bold">TaxEase Admin</CardTitle>
           <CardDescription>Sign in to access the admin dashboard</CardDescription>
         </CardHeader>
         <CardContent>
@@ -58,10 +58,11 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@taxpro.ca"
+                placeholder="admin@taxease.ca"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="transition-all duration-200 focus:scale-[1.01]"
               />
             </div>
             <div className="space-y-2">
@@ -74,28 +75,40 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="transition-all duration-200 focus:scale-[1.01]"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
+            <Button 
+              type="submit" 
+              className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
 
-          <div className="mt-6 p-4 rounded-lg bg-muted/50 text-sm">
+          <div className="mt-6 p-4 rounded-lg bg-muted/50 text-sm animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <p className="font-medium mb-2">Demo Credentials:</p>
             <div className="space-y-1 text-muted-foreground">
-              <p><strong>Superadmin:</strong> superadmin@taxpro.ca</p>
-              <p><strong>Admin:</strong> admin@taxpro.ca</p>
+              <p><strong>Superadmin:</strong> superadmin@taxease.ca</p>
+              <p><strong>Admin:</strong> admin@taxease.ca</p>
               <p><strong>Password:</strong> demo123</p>
             </div>
           </div>

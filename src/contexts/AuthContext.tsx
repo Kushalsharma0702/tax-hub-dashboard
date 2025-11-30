@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const MOCK_USERS: User[] = [
   {
     id: '1',
-    email: 'superadmin@taxpro.ca',
+    email: 'superadmin@taxease.ca',
     name: 'John Smith',
     role: 'superadmin',
     permissions: Object.values(PERMISSIONS),
@@ -25,7 +25,7 @@ const MOCK_USERS: User[] = [
   },
   {
     id: '2',
-    email: 'admin@taxpro.ca',
+    email: 'admin@taxease.ca',
     name: 'Sarah Johnson',
     role: 'admin',
     permissions: [PERMISSIONS.ADD_EDIT_CLIENT, PERMISSIONS.REQUEST_DOCUMENTS, PERMISSIONS.UPDATE_WORKFLOW],
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('taxpro_user');
+    const storedUser = localStorage.getItem('taxease_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const foundUser = MOCK_USERS.find(u => u.email === email);
     if (foundUser && password === 'demo123') {
       setUser(foundUser);
-      localStorage.setItem('taxpro_user', JSON.stringify(foundUser));
+      localStorage.setItem('taxease_user', JSON.stringify(foundUser));
       return true;
     }
     return false;
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('taxpro_user');
+    localStorage.removeItem('taxease_user');
   };
 
   const hasPermission = (permission: string): boolean => {
