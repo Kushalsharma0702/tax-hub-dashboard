@@ -10,7 +10,6 @@ import {
   UserCog,
   Settings,
   BarChart3,
-  ClipboardList,
   History,
   ChevronLeft,
   ChevronRight,
@@ -44,35 +43,36 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-card border-r border-border transition-all duration-300',
+        'fixed left-0 top-0 z-40 h-screen bg-card border-r border-border transition-all duration-300 ease-in-out',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className={cn('flex h-16 items-center border-b border-border px-4', collapsed ? 'justify-center' : 'gap-3')}>
-          <img src={logo} alt="TaxPro" className="h-10 w-10" />
-          {!collapsed && <span className="text-lg font-semibold text-foreground">TaxPro Admin</span>}
+        <div className={cn('flex h-16 items-center border-b border-border px-4 transition-all duration-300', collapsed ? 'justify-center' : 'gap-3')}>
+          <img src={logo} alt="TaxEase" className="h-10 w-10 transition-transform duration-300 hover:scale-105" />
+          {!collapsed && <span className="text-lg font-semibold text-foreground animate-fade-in">TaxEase Admin</span>}
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
-          {filteredNav.map((item) => {
+          {filteredNav.map((item, index) => {
             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:translate-x-1',
                   collapsed && 'justify-center'
                 )}
+                style={{ animationDelay: `${index * 50}ms` }}
                 title={collapsed ? item.name : undefined}
               >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <item.icon className={cn('h-5 w-5 flex-shrink-0 transition-transform duration-200', isActive && 'scale-110')} />
                 {!collapsed && <span>{item.name}</span>}
               </Link>
             );
@@ -80,9 +80,9 @@ export function Sidebar() {
         </nav>
 
         {/* User Info */}
-        <div className={cn('border-t border-border p-4', collapsed && 'px-2')}>
+        <div className={cn('border-t border-border p-4 transition-all duration-300', collapsed && 'px-2')}>
           {!collapsed && user && (
-            <div className="mb-3">
+            <div className="mb-3 animate-fade-in">
               <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
               <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
             </div>
@@ -90,7 +90,7 @@ export function Sidebar() {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full"
+            className="w-full transition-all duration-200 hover:scale-105"
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}

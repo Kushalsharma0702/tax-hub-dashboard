@@ -21,10 +21,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
-import { mockClients, mockAdmins } from '@/data/mockData';
+import { mockClients } from '@/data/mockData';
 import { Client, STATUS_LABELS, ClientStatus } from '@/types';
-import { Plus, Filter, Download, Users } from 'lucide-react';
+import { Plus, Download, Trash2, Edit, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,7 +46,12 @@ export default function Clients() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<string>('all');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [newClient, setNewClient] = useState({ name: '', email: '', phone: '' });
+  const [editClient, setEditClient] = useState({ name: '', email: '', phone: '' });
 
   const filteredClients = clients.filter((client) => {
     if (statusFilter !== 'all' && client.status !== statusFilter) return false;
@@ -79,21 +94,53 @@ export default function Clients() {
       key: 'actions',
       header: 'Actions',
       render: (client: Client) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/clients/${client.id}`);
-          }}
-        >
-          View
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/clients/${client.id}`);
+            }}
+            className="transition-all duration-200 hover:scale-105"
+          >
+            View
+          </Button>
+          {hasPermission('add_edit_client') && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedClient(client);
+                  setEditClient({ name: client.name, email: client.email, phone: client.phone });
+                  setIsEditOpen(true);
+                }}
+                className="transition-all duration-200 hover:scale-105"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedClient(client);
+                  setIsDeleteOpen(true);
+                }}
+                className="text-destructive hover:text-destructive transition-all duration-200 hover:scale-105"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
       ),
     },
   ];
 
-  const handleAddClient = () => {
+  const handleAddClient = async () => {
     if (!newClient.name || !newClient.email) {
       toast({
         title: 'Validation Error',
@@ -103,8 +150,11 @@ export default function Clients() {
       return;
     }
 
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     const client: Client = {
-      id: String(clients.length + 1),
+      id: String(Date.now()),
       name: newClient.name,
       email: newClient.email,
       phone: newClient.phone,
@@ -120,10 +170,55 @@ export default function Clients() {
     setClients([client, ...clients]);
     setNewClient({ name: '', email: '', phone: '' });
     setIsAddOpen(false);
+    setIsLoading(false);
     toast({
       title: 'Client Added',
       description: `${client.name} has been added successfully.`,
     });
+  };
+
+  const handleEditClient = async () => {
+    if (!selectedClient || !editClient.name || !editClient.email) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setClients(prev => prev.map(c => 
+      c.id === selectedClient.id 
+        ? { ...c, name: editClient.name, email: editClient.email, phone: editClient.phone, updatedAt: new Date() }
+        : c
+    ));
+    
+    setIsEditOpen(false);
+    setSelectedClient(null);
+    setIsLoading(false);
+    toast({
+      title: 'Client Updated',
+      description: `${editClient.name}'s information has been updated.`,
+    });
+  };
+
+  const handleDeleteClient = async () => {
+    if (!selectedClient) return;
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setClients(prev => prev.filter(c => c.id !== selectedClient.id));
+    setIsDeleteOpen(false);
+    setIsLoading(false);
+    toast({
+      title: 'Client Deleted',
+      description: `${selectedClient.name} has been removed from the system.`,
+    });
+    setSelectedClient(null);
   };
 
   return (
@@ -131,7 +226,7 @@ export default function Clients() {
       title="Client Management"
       breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Clients' }]}
     >
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex items-center gap-3">
@@ -160,19 +255,19 @@ export default function Clients() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="transition-all duration-200 hover:scale-105">
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
             {hasPermission('add_edit_client') && (
               <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm">
+                  <Button size="sm" className="transition-all duration-200 hover:scale-105">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Client
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="animate-scale-in">
                   <DialogHeader>
                     <DialogTitle>Add New Client</DialogTitle>
                     <DialogDescription>
@@ -213,7 +308,10 @@ export default function Clients() {
                     <Button variant="outline" onClick={() => setIsAddOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleAddClient}>Add Client</Button>
+                    <Button onClick={handleAddClient} disabled={isLoading}>
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Add Client
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -223,28 +321,21 @@ export default function Clients() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-lg bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Total Clients</p>
-            <p className="text-2xl font-bold">{filteredClients.length}</p>
-          </div>
-          <div className="p-4 rounded-lg bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Documents Pending</p>
-            <p className="text-2xl font-bold text-amber-600">
-              {filteredClients.filter(c => c.status === 'documents_pending').length}
-            </p>
-          </div>
-          <div className="p-4 rounded-lg bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Awaiting Payment</p>
-            <p className="text-2xl font-bold text-orange-600">
-              {filteredClients.filter(c => c.status === 'awaiting_payment').length}
-            </p>
-          </div>
-          <div className="p-4 rounded-lg bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Completed</p>
-            <p className="text-2xl font-bold text-green-600">
-              {filteredClients.filter(c => c.status === 'completed' || c.status === 'filed').length}
-            </p>
-          </div>
+          {[
+            { label: 'Total Clients', value: filteredClients.length, color: '' },
+            { label: 'Documents Pending', value: filteredClients.filter(c => c.status === 'documents_pending').length, color: 'text-amber-600' },
+            { label: 'Awaiting Payment', value: filteredClients.filter(c => c.status === 'awaiting_payment').length, color: 'text-orange-600' },
+            { label: 'Completed', value: filteredClients.filter(c => c.status === 'completed' || c.status === 'filed').length, color: 'text-green-600' },
+          ].map((stat, index) => (
+            <div 
+              key={stat.label}
+              className="p-4 rounded-lg bg-card border border-border transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+            </div>
+          ))}
         </div>
 
         {/* Data Table */}
@@ -255,6 +346,79 @@ export default function Clients() {
           searchPlaceholder="Search clients..."
           onRowClick={(client) => navigate(`/clients/${client.id}`)}
         />
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="animate-scale-in">
+            <DialogHeader>
+              <DialogTitle>Edit Client</DialogTitle>
+              <DialogDescription>
+                Update the client's information.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={editClient.name}
+                  onChange={(e) => setEditClient({ ...editClient, name: e.target.value })}
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editClient.email}
+                  onChange={(e) => setEditClient({ ...editClient, email: e.target.value })}
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input
+                  id="edit-phone"
+                  value={editClient.phone}
+                  onChange={(e) => setEditClient({ ...editClient, phone: e.target.value })}
+                  placeholder="(416) 555-0000"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditClient} disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+          <AlertDialogContent className="animate-scale-in">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Client</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <strong>{selectedClient?.name}</strong>? This action cannot be undone and will remove all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteClient}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
