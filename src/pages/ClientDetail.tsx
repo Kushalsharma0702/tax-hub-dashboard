@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -34,8 +36,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { mockClients, mockDocuments, mockPayments, mockNotes } from '@/data/mockData';
-import { STATUS_LABELS, ClientStatus, PERMISSIONS, Note, Document as DocType } from '@/types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { mockClients, mockDocuments, mockPayments, mockNotes, mockQuestionnaires } from '@/data/mockData';
+import { STATUS_LABELS, ClientStatus, PERMISSIONS, Note, Document as DocType, T1Question } from '@/types';
 import {
   User,
   Mail,
@@ -51,6 +59,19 @@ import {
   Trash2,
   Loader2,
   Plus,
+  MapPin,
+  Building2,
+  CheckCircle2,
+  XCircle,
+  MinusCircle,
+  AlertCircle,
+  FileCheck,
+  FileMinus,
+  FileQuestion,
+  HelpCircle,
+  ChevronRight,
+  UserCircle,
+  Banknote,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -65,6 +86,7 @@ export default function ClientDetail() {
   const [documents, setDocuments] = useState(() => mockDocuments.filter((d) => d.clientId === id));
   const [payments, setPayments] = useState(() => mockPayments.filter((p) => p.clientId === id));
   const [notes, setNotes] = useState<Note[]>(() => mockNotes.filter((n) => n.clientId === id));
+  const questionnaire = useMemo(() => mockQuestionnaires.find((q) => q.clientId === id), [id]);
 
   const [newNote, setNewNote] = useState('');
   const [isClientFacing, setIsClientFacing] = useState(false);
@@ -75,6 +97,32 @@ export default function ClientDetail() {
   const [isLoading, setIsLoading] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Group questions by category
+  const questionsByCategory = useMemo(() => {
+    if (!questionnaire) return {};
+    return questionnaire.questions.reduce((acc, q) => {
+      if (!acc[q.category]) acc[q.category] = [];
+      acc[q.category].push(q);
+      return acc;
+    }, {} as Record<string, T1Question[]>);
+  }, [questionnaire]);
+
+  // Get documents for a specific question
+  const getDocsForQuestion = (questionId: string) => {
+    return documents.filter((d) => d.questionId === questionId);
+  };
+
+  // Calculate document stats for a question
+  const getQuestionDocStats = (question: T1Question) => {
+    const docs = getDocsForQuestion(question.id);
+    const complete = docs.filter((d) => d.status === 'complete').length;
+    const pending = docs.filter((d) => d.status === 'pending').length;
+    const missing = docs.filter((d) => d.status === 'missing').length;
+    const required = question.requiredDocuments.length;
+    return { complete, pending, missing, required, total: docs.length };
+  };
 
   if (!client) {
     return (
@@ -89,17 +137,11 @@ export default function ClientDetail() {
 
   const handleAddNote = async () => {
     if (!newNote.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a note.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Please enter a note.', variant: 'destructive' });
       return;
     }
-
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-
+    await new Promise((resolve) => setTimeout(resolve, 300));
     const note: Note = {
       id: String(Date.now()),
       clientId: client.id,
@@ -109,64 +151,41 @@ export default function ClientDetail() {
       isClientFacing,
       createdAt: new Date(),
     };
-
     setNotes([note, ...notes]);
     setNewNote('');
     setIsLoading(false);
-    toast({
-      title: 'Note Added',
-      description: isClientFacing ? 'Client-facing note has been added.' : 'Internal note has been added.',
-    });
+    toast({ title: 'Note Added', description: isClientFacing ? 'Client-facing note added.' : 'Internal note added.' });
   };
 
   const handleStatusUpdate = async (newStatus: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await new Promise((resolve) => setTimeout(resolve, 300));
     setClient({ ...client, status: newStatus as ClientStatus });
     setIsLoading(false);
-    toast({
-      title: 'Status Updated',
-      description: `Client status changed to ${STATUS_LABELS[newStatus as ClientStatus]}.`,
-    });
+    toast({ title: 'Status Updated', description: `Status changed to ${STATUS_LABELS[newStatus as ClientStatus]}.` });
   };
 
   const handleEditClient = async () => {
     if (!editForm.name || !editForm.email) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please fill in all required fields.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Validation Error', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
     }
-
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setClient({ ...client, name: editForm.name, email: editForm.email, phone: editForm.phone });
     setIsEditOpen(false);
     setIsLoading(false);
-    toast({
-      title: 'Client Updated',
-      description: 'Client information has been updated successfully.',
-    });
+    toast({ title: 'Client Updated', description: 'Client information updated successfully.' });
   };
 
   const handleAddPayment = async () => {
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid payment amount.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Invalid Amount', description: 'Please enter a valid payment amount.', variant: 'destructive' });
       return;
     }
-
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
+    await new Promise((resolve) => setTimeout(resolve, 500));
     const payment = {
       id: String(Date.now()),
       clientId: client.id,
@@ -177,48 +196,52 @@ export default function ClientDetail() {
       createdAt: new Date(),
       createdBy: user?.name || 'Admin',
     };
-
     setPayments([payment, ...payments]);
-    setClient({ 
-      ...client, 
+    setClient({
+      ...client,
       paidAmount: client.paidAmount + amount,
       paymentStatus: client.paidAmount + amount >= client.totalAmount ? 'paid' : 'partial',
     });
     setPaymentAmount('');
     setIsAddPaymentOpen(false);
     setIsLoading(false);
-    toast({
-      title: 'Payment Recorded',
-      description: `$${amount.toFixed(2)} payment has been recorded.`,
-    });
+    toast({ title: 'Payment Recorded', description: `$${amount.toFixed(2)} payment recorded.` });
   };
 
   const handleDeleteDocument = async () => {
     if (!selectedDoc) return;
-
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    setDocuments(prev => prev.filter(d => d.id !== selectedDoc.id));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    setDocuments((prev) => prev.filter((d) => d.id !== selectedDoc.id));
     setIsDeleteDocOpen(false);
     setSelectedDoc(null);
     setIsLoading(false);
+    toast({ title: 'Document Deleted', description: 'The document has been removed.' });
+  };
+
+  const handleRequestDocument = (docName?: string) => {
     toast({
-      title: 'Document Deleted',
-      description: 'The document has been removed.',
+      title: 'Request Sent',
+      description: docName ? `Request for "${docName}" sent to client.` : 'Document request sent to client.',
     });
   };
 
-  const handleRequestDocument = () => {
-    toast({
-      title: 'Request Sent',
-      description: 'Document request has been sent to the client.',
-    });
+  const AnswerIcon = ({ answer }: { answer: 'yes' | 'no' | 'na' | null }) => {
+    if (answer === 'yes') return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    if (answer === 'no') return <XCircle className="h-5 w-5 text-muted-foreground" />;
+    if (answer === 'na') return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
+    return <HelpCircle className="h-5 w-5 text-orange-500" />;
+  };
+
+  const DocumentStatusIcon = ({ status }: { status: string }) => {
+    if (status === 'complete') return <FileCheck className="h-4 w-4 text-green-500" />;
+    if (status === 'pending') return <FileQuestion className="h-4 w-4 text-yellow-500" />;
+    return <FileMinus className="h-4 w-4 text-destructive" />;
   };
 
   return (
     <DashboardLayout
-      title={client.name}
+      title=""
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Clients', href: '/clients' },
@@ -226,15 +249,41 @@ export default function ClientDetail() {
       ]}
     >
       <div className="space-y-6 animate-fade-in">
-        {/* Back Button & Actions */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/clients')} className="transition-all duration-200 hover:translate-x-[-4px]">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Clients
-          </Button>
-          <div className="flex gap-2">
+        {/* Client Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/clients')} className="transition-all duration-200 hover:translate-x-[-4px]">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <UserCircle className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">{client.name}</h1>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Filing Year: {client.filingYear}</span>
+                  <span>•</span>
+                  <StatusBadge status={client.status} type="client" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 ml-auto">
+            {hasPermission(PERMISSIONS.UPDATE_WORKFLOW) && (
+              <Select defaultValue={client.status} onValueChange={handleStatusUpdate}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Update Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {hasPermission(PERMISSIONS.ADD_EDIT_CLIENT) && (
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => {
                   setEditForm({ name: client.name, email: client.email, phone: client.phone });
@@ -243,223 +292,436 @@ export default function ClientDetail() {
                 className="transition-all duration-200 hover:scale-105"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Edit Client
+                Edit
               </Button>
             )}
           </div>
         </div>
 
-        {/* Client Overview */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main Info */}
-          <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Client Information</span>
-                <StatusBadge status={client.status} type="client" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {[
-                  { icon: User, label: 'Full Name', value: client.name },
-                  { icon: Mail, label: 'Email', value: client.email },
-                  { icon: Phone, label: 'Phone', value: client.phone },
-                  { icon: Calendar, label: 'Filing Year', value: client.filingYear },
-                ].map((item, index) => (
-                  <div 
-                    key={item.label}
-                    className="flex items-center gap-3 p-2 rounded-lg transition-all duration-200 hover:bg-muted/30"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                      <item.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{item.label}</p>
-                      <p className="font-medium">{item.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Workflow Status Update */}
-              {hasPermission(PERMISSIONS.UPDATE_WORKFLOW) && (
-                <div className="mt-6 pt-6 border-t border-border">
-                  <Label>Update Workflow Status</Label>
-                  <Select defaultValue={client.status} onValueChange={handleStatusUpdate}>
-                    <SelectTrigger className="mt-2 w-full max-w-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Payment Summary */}
-          <Card className="transition-all duration-300 hover:shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Amount</span>
-                <span className="font-bold">${client.totalAmount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Paid</span>
-                <span className="font-medium text-green-600">${client.paidAmount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Balance</span>
-                <span className="font-medium text-orange-600">
-                  ${client.totalAmount - client.paidAmount}
-                </span>
-              </div>
-              <div className="pt-2 border-t border-border">
-                <StatusBadge status={client.paymentStatus} type="payment" />
-              </div>
-              {hasPermission(PERMISSIONS.ADD_EDIT_PAYMENT) && (
-                <Button 
-                  className="w-full transition-all duration-200 hover:scale-[1.02]" 
-                  variant="outline"
-                  onClick={() => setIsAddPaymentOpen(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Payment
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs Section */}
-        <Tabs defaultValue="documents" className="w-full">
-          <TabsList>
-            <TabsTrigger value="documents" className="transition-all duration-200">
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="overview" className="transition-all duration-200">
+              <User className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="questionnaire" className="transition-all duration-200">
               <FileText className="h-4 w-4 mr-2" />
-              Documents ({documents.length})
+              T1 Form
             </TabsTrigger>
             <TabsTrigger value="payments" className="transition-all duration-200">
               <CreditCard className="h-4 w-4 mr-2" />
-              Payments ({payments.length})
+              Payments
             </TabsTrigger>
             <TabsTrigger value="notes" className="transition-all duration-200">
               <MessageSquare className="h-4 w-4 mr-2" />
-              Notes ({notes.length})
-            </TabsTrigger>
-            <TabsTrigger value="timeline" className="transition-all duration-200">
-              <Clock className="h-4 w-4 mr-2" />
-              Timeline
+              Notes
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="documents" className="mt-4 animate-fade-in">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="mt-6 animate-fade-in space-y-6">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Personal Information */}
+              <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <User className="h-5 w-5 text-primary" />
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                      <Mail className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="font-medium">{client.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                      <Phone className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Phone</p>
+                        <p className="font-medium">{client.phone}</p>
+                      </div>
+                    </div>
+                    {client.personalInfo && (
+                      <>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                          <Calendar className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Date of Birth</p>
+                            <p className="font-medium">{client.personalInfo.dateOfBirth.toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                          <User className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">SIN</p>
+                            <p className="font-medium">{client.personalInfo.sin}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 sm:col-span-2">
+                          <MapPin className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Address</p>
+                            <p className="font-medium">
+                              {client.personalInfo.address.street}, {client.personalInfo.address.city},{' '}
+                              {client.personalInfo.address.province} {client.personalInfo.address.postalCode}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Marital Status</p>
+                            <p className="font-medium capitalize">{client.personalInfo.maritalStatus.replace('_', ' ')}</p>
+                          </div>
+                        </div>
+                        {client.personalInfo.bankInfo && (
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                            <Building2 className="h-5 w-5 text-primary" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">Bank</p>
+                              <p className="font-medium">{client.personalInfo.bankInfo.institution}</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  {client.assignedAdminName && (
+                    <div className="pt-3 border-t border-border">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Assigned Admin:</span>
+                        <Badge variant="secondary">{client.assignedAdminName}</Badge>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Payment Summary */}
+              <Card className="transition-all duration-300 hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Banknote className="h-5 w-5 text-primary" />
+                    Payment Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Total Amount</span>
+                      <span className="text-xl font-bold">${client.totalAmount}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Paid</span>
+                      <span className="font-semibold text-green-600">${client.paidAmount}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Balance</span>
+                      <span className="font-semibold text-orange-500">${client.totalAmount - client.paidAmount}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Status</span>
+                      <StatusBadge status={client.paymentStatus} type="payment" />
+                    </div>
+                  </div>
+                  {hasPermission(PERMISSIONS.ADD_EDIT_PAYMENT) && (
+                    <Button className="w-full mt-4 transition-all duration-200 hover:scale-[1.02]" onClick={() => setIsAddPaymentOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Payment
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Document Overview Stats */}
+            <Card className="transition-all duration-300 hover:shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Document Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <FileCheck className="h-8 w-8 text-green-500" />
+                    <div>
+                      <p className="text-2xl font-bold">{documents.filter((d) => d.status === 'complete').length}</p>
+                      <p className="text-sm text-muted-foreground">Complete</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                    <FileQuestion className="h-8 w-8 text-yellow-500" />
+                    <div>
+                      <p className="text-2xl font-bold">{documents.filter((d) => d.status === 'pending').length}</p>
+                      <p className="text-sm text-muted-foreground">Pending</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <FileMinus className="h-8 w-8 text-destructive" />
+                    <div>
+                      <p className="text-2xl font-bold">{documents.filter((d) => d.status === 'missing').length}</p>
+                      <p className="text-sm text-muted-foreground">Missing</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* T1 Questionnaire Tab */}
+          <TabsContent value="questionnaire" className="mt-6 animate-fade-in">
+            {questionnaire ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">T1 Tax Return Questionnaire</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Completed on {questionnaire.completedAt?.toLocaleDateString()} • {questionnaire.questions.length} questions
+                    </p>
+                  </div>
+                  {hasPermission(PERMISSIONS.REQUEST_DOCUMENTS) && (
+                    <Button variant="outline" onClick={() => handleRequestDocument()} className="transition-all duration-200 hover:scale-105">
+                      <Send className="h-4 w-4 mr-2" />
+                      Request All Missing
+                    </Button>
+                  )}
+                </div>
+
+                <Accordion type="multiple" className="space-y-3">
+                  {Object.entries(questionsByCategory).map(([category, questions]) => (
+                    <AccordionItem key={category} value={category} className="border rounded-lg px-4 bg-card transition-all duration-200 hover:shadow-sm">
+                      <AccordionTrigger className="hover:no-underline py-4">
+                        <div className="flex items-center gap-3 text-left">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{category}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {questions.filter((q) => q.answer === 'yes').length} applicable •{' '}
+                              {questions.reduce((acc, q) => acc + getDocsForQuestion(q.id).length, 0)} documents
+                            </p>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="space-y-4 pt-2">
+                          {questions.map((question, qIndex) => {
+                            const docs = getDocsForQuestion(question.id);
+                            const stats = getQuestionDocStats(question);
+
+                            return (
+                              <div
+                                key={question.id}
+                                className="rounded-lg border border-border p-4 transition-all duration-200 hover:bg-muted/20"
+                                style={{ animationDelay: `${qIndex * 50}ms` }}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <AnswerIcon answer={question.answer} />
+                                  <div className="flex-1 space-y-3">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div>
+                                        <p className="font-medium">{question.question}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                          Answer:{' '}
+                                          <span className={question.answer === 'yes' ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
+                                            {question.answer === 'yes' ? 'Yes' : question.answer === 'no' ? 'No' : question.answer === 'na' ? 'N/A' : 'Not Answered'}
+                                          </span>
+                                        </p>
+                                      </div>
+                                      {question.answer === 'yes' && stats.required > 0 && (
+                                        <Badge variant={stats.complete === stats.required ? 'default' : 'secondary'} className="shrink-0">
+                                          {stats.complete}/{stats.required} docs
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    {/* Documents for this question */}
+                                    {question.answer === 'yes' && (
+                                      <div className="mt-3 space-y-2">
+                                        {question.requiredDocuments.length > 0 && (
+                                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Required Documents</p>
+                                        )}
+                                        <div className="grid gap-2">
+                                          {question.requiredDocuments.map((reqDoc, dIndex) => {
+                                            const uploadedDoc = docs.find((d) => d.name.toLowerCase().includes(reqDoc.toLowerCase().split(' ')[0]));
+                                            return (
+                                              <div
+                                                key={dIndex}
+                                                className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
+                                                  uploadedDoc?.status === 'complete'
+                                                    ? 'bg-green-500/5 border-green-500/20'
+                                                    : uploadedDoc?.status === 'pending'
+                                                    ? 'bg-yellow-500/5 border-yellow-500/20'
+                                                    : 'bg-destructive/5 border-destructive/20'
+                                                }`}
+                                              >
+                                                <div className="flex items-center gap-3">
+                                                  <DocumentStatusIcon status={uploadedDoc?.status || 'missing'} />
+                                                  <div>
+                                                    <p className="text-sm font-medium">{uploadedDoc?.name || reqDoc}</p>
+                                                    {uploadedDoc && (
+                                                      <p className="text-xs text-muted-foreground">
+                                                        v{uploadedDoc.version}
+                                                        {uploadedDoc.uploadedAt && ` • ${uploadedDoc.uploadedAt.toLocaleDateString()}`}
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                  {uploadedDoc ? (
+                                                    <>
+                                                      <StatusBadge status={uploadedDoc.status} type="document" />
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                          setSelectedDoc(uploadedDoc);
+                                                          setIsDeleteDocOpen(true);
+                                                        }}
+                                                        className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                                                      >
+                                                        <Trash2 className="h-4 w-4" />
+                                                      </Button>
+                                                    </>
+                                                  ) : (
+                                                    hasPermission(PERMISSIONS.REQUEST_DOCUMENTS) && (
+                                                      <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleRequestDocument(reqDoc)}
+                                                        className="h-8 transition-all duration-200 hover:scale-105"
+                                                      >
+                                                        <Send className="h-3 w-3 mr-1" />
+                                                        Request
+                                                      </Button>
+                                                    )
+                                                  )}
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+
+                                        {/* Additional uploaded documents not in required list */}
+                                        {docs.filter((d) => !question.requiredDocuments.some((req) => d.name.toLowerCase().includes(req.toLowerCase().split(' ')[0]))).length > 0 && (
+                                          <div className="mt-3">
+                                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Additional Documents</p>
+                                            {docs
+                                              .filter((d) => !question.requiredDocuments.some((req) => d.name.toLowerCase().includes(req.toLowerCase().split(' ')[0])))
+                                              .map((doc) => (
+                                                <div
+                                                  key={doc.id}
+                                                  className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 transition-all duration-200 hover:bg-muted/40"
+                                                >
+                                                  <div className="flex items-center gap-3">
+                                                    <DocumentStatusIcon status={doc.status} />
+                                                    <div>
+                                                      <p className="text-sm font-medium">{doc.name}</p>
+                                                      <p className="text-xs text-muted-foreground">
+                                                        v{doc.version}
+                                                        {doc.uploadedAt && ` • ${doc.uploadedAt.toLocaleDateString()}`}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                  <StatusBadge status={doc.status} type="document" />
+                                                </div>
+                                              ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">No Questionnaire Found</p>
+                  <p className="text-sm text-muted-foreground mt-1">The client has not completed the T1 questionnaire yet.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="mt-6 animate-fade-in">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Documents</CardTitle>
-                {hasPermission(PERMISSIONS.REQUEST_DOCUMENTS) && (
-                  <Button size="sm" onClick={handleRequestDocument} className="transition-all duration-200 hover:scale-105">
-                    <Send className="h-4 w-4 mr-2" />
-                    Request Missing
+                <CardTitle>Payment History</CardTitle>
+                {hasPermission(PERMISSIONS.ADD_EDIT_PAYMENT) && (
+                  <Button size="sm" onClick={() => setIsAddPaymentOpen(true)} className="transition-all duration-200 hover:scale-105">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Payment
                   </Button>
                 )}
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {documents.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No documents uploaded yet.</p>
-                  ) : (
-                    documents.map((doc, index) => (
+                {payments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <CreditCard className="h-12 w-12 mb-4 opacity-50" />
+                    <p>No payments recorded yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {payments.map((payment, index) => (
                       <div
-                        key={doc.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30 transition-all duration-200 hover:bg-muted/50"
+                        key={payment.id}
+                        className="flex items-center justify-between p-4 rounded-lg border bg-card transition-all duration-200 hover:shadow-sm"
                         style={{ animationDelay: `${index * 50}ms` }}
                       >
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-primary" />
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                            <CreditCard className="h-5 w-5 text-green-500" />
+                          </div>
                           <div>
-                            <p className="font-medium">{doc.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Version {doc.version} • {doc.type}
+                            <p className="font-semibold text-lg">${payment.amount}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {payment.method} • {payment.createdAt.toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <StatusBadge status={doc.status} type="document" />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDoc(doc);
-                              setIsDeleteDocOpen(true);
-                            }}
-                            className="text-destructive hover:text-destructive transition-all duration-200 hover:scale-105"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="payments" className="mt-4 animate-fade-in">
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {payments.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No payments recorded yet.</p>
-                  ) : (
-                    payments.map((payment, index) => (
-                      <div
-                        key={payment.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30 transition-all duration-200 hover:bg-muted/50"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <div>
-                          <p className="font-medium">${payment.amount}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {payment.method} • {payment.createdAt.toLocaleDateString()}
-                          </p>
-                        </div>
                         <p className="text-sm text-muted-foreground">{payment.createdBy}</p>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="notes" className="mt-4 animate-fade-in">
+          {/* Notes Tab */}
+          <TabsContent value="notes" className="mt-6 animate-fade-in">
             <Card>
               <CardHeader>
-                <CardTitle>Notes</CardTitle>
+                <CardTitle>Notes & Communication</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Add Note */}
-                <div className="space-y-3 p-4 rounded-lg bg-muted/30">
+                <div className="space-y-3 p-4 rounded-lg bg-muted/30 border border-border">
                   <Textarea
                     placeholder="Add a note..."
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
-                    className="transition-all duration-200 focus:scale-[1.01]"
+                    className="min-h-[100px] transition-all duration-200 focus:scale-[1.01]"
                   />
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -467,12 +729,12 @@ export default function ClientDetail() {
                         type="checkbox"
                         checked={isClientFacing}
                         onChange={(e) => setIsClientFacing(e.target.checked)}
-                        className="rounded"
+                        className="rounded border-border"
                       />
-                      Client-facing note
+                      <span>Visible to client</span>
                     </label>
-                    <Button size="sm" onClick={handleAddNote} disabled={isLoading} className="transition-all duration-200 hover:scale-105">
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    <Button onClick={handleAddNote} disabled={isLoading} className="transition-all duration-200 hover:scale-105">
+                      {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                       Add Note
                     </Button>
                   </div>
@@ -480,162 +742,118 @@ export default function ClientDetail() {
 
                 {/* Notes List */}
                 <div className="space-y-3">
-                  {notes.map((note, index) => (
-                    <div 
-                      key={note.id} 
-                      className="p-3 rounded-lg bg-muted/30 transition-all duration-200 hover:bg-muted/50"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-medium text-sm">{note.authorName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {note.createdAt.toLocaleDateString()}
-                          </p>
+                  {notes.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
+                      <p>No notes yet.</p>
+                    </div>
+                  ) : (
+                    notes.map((note, index) => (
+                      <div
+                        key={note.id}
+                        className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${
+                          note.isClientFacing ? 'bg-primary/5 border-primary/20' : 'bg-card'
+                        }`}
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <p className="text-sm">{note.content}</p>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                              <span>{note.authorName}</span>
+                              <span>•</span>
+                              <span>{note.createdAt.toLocaleString()}</span>
+                              {note.isClientFacing && (
+                                <>
+                                  <span>•</span>
+                                  <Badge variant="outline" className="text-xs">Client Visible</Badge>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        {note.isClientFacing && (
-                          <Badge variant="outline" className="text-xs">Client-Facing</Badge>
-                        )}
                       </div>
-                      <p className="text-sm">{note.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="timeline" className="mt-4 animate-fade-in">
-            <Card>
-              <CardHeader>
-                <CardTitle>Activity Timeline</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="h-3 w-3 rounded-full bg-primary animate-pulse" />
-                      <div className="w-px h-full bg-border" />
-                    </div>
-                    <div className="pb-4">
-                      <p className="font-medium text-sm">Client Created</p>
-                      <p className="text-xs text-muted-foreground">
-                        {client.createdAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="h-3 w-3 rounded-full bg-primary" />
-                      <div className="w-px h-full bg-border" />
-                    </div>
-                    <div className="pb-4">
-                      <p className="font-medium text-sm">Last Updated</p>
-                      <p className="text-xs text-muted-foreground">
-                        {client.updatedAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Edit Client Dialog */}
-        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent className="animate-scale-in">
-            <DialogHeader>
-              <DialogTitle>Edit Client</DialogTitle>
-              <DialogDescription>Update client information.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Full Name *</Label>
-                <Input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email *</Label>
-                <Input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-              <Button onClick={handleEditClient} disabled={isLoading}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Add Payment Dialog */}
-        <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
-          <DialogContent className="animate-scale-in">
-            <DialogHeader>
-              <DialogTitle>Record Payment</DialogTitle>
-              <DialogDescription>Enter the payment amount received from {client.name}.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Amount ($)</Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Outstanding balance: <strong>${client.totalAmount - client.paidAmount}</strong>
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddPaymentOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddPayment} disabled={isLoading}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Record Payment
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Document Confirmation */}
-        <AlertDialog open={isDeleteDocOpen} onOpenChange={setIsDeleteDocOpen}>
-          <AlertDialogContent className="animate-scale-in">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Document</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete <strong>{selectedDoc?.name}</strong>? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleDeleteDocument}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      {/* Edit Client Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Client</DialogTitle>
+            <DialogDescription>Update client information</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone</Label>
+              <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditClient} disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Payment Dialog */}
+      <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Payment</DialogTitle>
+            <DialogDescription>Record a new payment for this client</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Amount ($)</Label>
+              <Input type="number" placeholder="0.00" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddPaymentOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddPayment} disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Document Confirmation */}
+      <AlertDialog open={isDeleteDocOpen} onOpenChange={setIsDeleteDocOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedDoc?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDocument} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
