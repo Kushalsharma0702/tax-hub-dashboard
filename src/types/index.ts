@@ -45,6 +45,21 @@ export interface Client {
   paidAmount: number;
   createdAt: Date;
   updatedAt: Date;
+  personalInfo?: PersonalInfo;
+}
+export interface T1Question {
+  id: string;
+  category: string;
+  question: string;
+  answer: 'yes' | 'no' | 'na' | null;
+  requiredDocuments: string[];
+}
+
+export interface T1Questionnaire {
+  clientId: string;
+  filingYear: number;
+  questions: T1Question[];
+  completedAt?: Date;
 }
 
 export interface Document {
@@ -56,6 +71,24 @@ export interface Document {
   version: number;
   uploadedAt?: Date;
   notes?: string;
+  questionId?: string; // Links document to specific questionnaire question
+}
+
+export interface PersonalInfo {
+  sin: string;
+  dateOfBirth: Date;
+  maritalStatus: 'single' | 'married' | 'common_law' | 'separated' | 'divorced' | 'widowed';
+  address: {
+    street: string;
+    city: string;
+    province: string;
+    postalCode: string;
+  };
+  bankInfo?: {
+    institution: string;
+    transitNumber: string;
+    accountNumber: string;
+  };
 }
 
 export interface Payment {

@@ -1,4 +1,158 @@
-import { Client, Document, Payment, Note, AuditLog, User } from '@/types';
+import { Client, Document, Payment, Note, AuditLog, User, T1Questionnaire, PersonalInfo } from '@/types';
+
+// Personal Info for clients
+export const mockPersonalInfo: Record<string, PersonalInfo> = {
+  '1': {
+    sin: '***-***-123',
+    dateOfBirth: new Date('1985-03-15'),
+    maritalStatus: 'married',
+    address: {
+      street: '123 Maple Street',
+      city: 'Toronto',
+      province: 'ON',
+      postalCode: 'M5V 2T6',
+    },
+    bankInfo: {
+      institution: 'TD Bank',
+      transitNumber: '12345',
+      accountNumber: '****7890',
+    },
+  },
+  '2': {
+    sin: '***-***-456',
+    dateOfBirth: new Date('1990-07-22'),
+    maritalStatus: 'single',
+    address: {
+      street: '456 Oak Avenue',
+      city: 'Mississauga',
+      province: 'ON',
+      postalCode: 'L5B 3C8',
+    },
+  },
+};
+
+// T1 Questionnaire data
+export const mockQuestionnaires: T1Questionnaire[] = [
+  {
+    clientId: '1',
+    filingYear: 2024,
+    questions: [
+      {
+        id: 'q1',
+        category: 'Employment Income',
+        question: 'Did you have employment income in 2024?',
+        answer: 'yes',
+        requiredDocuments: ['T4 Slip'],
+      },
+      {
+        id: 'q2',
+        category: 'Employment Income',
+        question: 'Did you have multiple employers in 2024?',
+        answer: 'yes',
+        requiredDocuments: ['T4 Slip - Employer 2', 'T4 Slip - Employer 3'],
+      },
+      {
+        id: 'q3',
+        category: 'Investment Income',
+        question: 'Did you receive any investment income (dividends, interest)?',
+        answer: 'yes',
+        requiredDocuments: ['T5 Slip', 'T3 Slip'],
+      },
+      {
+        id: 'q4',
+        category: 'RRSP Contributions',
+        question: 'Did you contribute to an RRSP in 2024?',
+        answer: 'yes',
+        requiredDocuments: ['RRSP Contribution Receipt'],
+      },
+      {
+        id: 'q5',
+        category: 'Medical Expenses',
+        question: 'Do you have medical expenses to claim?',
+        answer: 'no',
+        requiredDocuments: [],
+      },
+      {
+        id: 'q6',
+        category: 'Rental Income',
+        question: 'Did you receive rental income from property?',
+        answer: 'no',
+        requiredDocuments: [],
+      },
+      {
+        id: 'q7',
+        category: 'Self-Employment',
+        question: 'Did you have self-employment or freelance income?',
+        answer: 'no',
+        requiredDocuments: [],
+      },
+      {
+        id: 'q8',
+        category: 'Capital Gains',
+        question: 'Did you sell any stocks, bonds, or property?',
+        answer: 'yes',
+        requiredDocuments: ['Capital Gains Statement', 'T5008 Slip'],
+      },
+      {
+        id: 'q9',
+        category: 'Foreign Income',
+        question: 'Did you receive any foreign income?',
+        answer: 'no',
+        requiredDocuments: [],
+      },
+      {
+        id: 'q10',
+        category: 'Tuition',
+        question: 'Did you or your dependents pay tuition fees?',
+        answer: 'no',
+        requiredDocuments: [],
+      },
+    ],
+    completedAt: new Date('2024-01-15'),
+  },
+  {
+    clientId: '2',
+    filingYear: 2024,
+    questions: [
+      {
+        id: 'q1',
+        category: 'Employment Income',
+        question: 'Did you have employment income in 2024?',
+        answer: 'yes',
+        requiredDocuments: ['T4 Slip'],
+      },
+      {
+        id: 'q2',
+        category: 'Employment Income',
+        question: 'Did you have multiple employers in 2024?',
+        answer: 'yes',
+        requiredDocuments: ['T4A Slip'],
+      },
+      {
+        id: 'q3',
+        category: 'Investment Income',
+        question: 'Did you receive any investment income (dividends, interest)?',
+        answer: 'no',
+        requiredDocuments: [],
+      },
+      {
+        id: 'q4',
+        category: 'RRSP Contributions',
+        question: 'Did you contribute to an RRSP in 2024?',
+        answer: 'no',
+        requiredDocuments: [],
+      },
+      {
+        id: 'q5',
+        category: 'Medical Expenses',
+        question: 'Do you have medical expenses to claim?',
+        answer: 'yes',
+        requiredDocuments: ['Medical Receipts', 'Pharmacy Receipts'],
+      },
+    ],
+    completedAt: new Date('2024-01-10'),
+  },
+];
 
 export const mockClients: Client[] = [
   {
@@ -15,6 +169,7 @@ export const mockClients: Client[] = [
     paidAmount: 0,
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-01-20'),
+    personalInfo: mockPersonalInfo['1'],
   },
   {
     id: '2',
@@ -30,6 +185,7 @@ export const mockClients: Client[] = [
     paidAmount: 300,
     createdAt: new Date('2024-01-10'),
     updatedAt: new Date('2024-01-22'),
+    personalInfo: mockPersonalInfo['2'],
   },
   {
     id: '3',
@@ -122,14 +278,22 @@ export const mockClients: Client[] = [
 ];
 
 export const mockDocuments: Document[] = [
-  { id: '1', clientId: '1', name: 'T4 Slip', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-16') },
-  { id: '2', clientId: '1', name: 'T5 Slip', type: 'investment', status: 'pending', version: 1 },
-  { id: '3', clientId: '1', name: 'RRSP Receipt', type: 'deduction', status: 'missing', version: 1 },
-  { id: '4', clientId: '2', name: 'T4 Slip', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-11') },
-  { id: '5', clientId: '2', name: 'T4A Slip', type: 'income', status: 'complete', version: 2, uploadedAt: new Date('2024-01-20') },
-  { id: '6', clientId: '3', name: 'T4 Slip', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-06') },
-  { id: '7', clientId: '4', name: 'T4 Slip', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-03') },
-  { id: '8', clientId: '4', name: 'Medical Expenses', type: 'deduction', status: 'complete', version: 1, uploadedAt: new Date('2024-01-04') },
+  // Client 1 documents linked to questions
+  { id: '1', clientId: '1', name: 'T4 Slip - Primary Employer', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-16'), questionId: 'q1' },
+  { id: '2', clientId: '1', name: 'T4 Slip - Employer 2', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-17'), questionId: 'q2' },
+  { id: '3', clientId: '1', name: 'T5 Slip', type: 'investment', status: 'pending', version: 1, questionId: 'q3' },
+  { id: '4', clientId: '1', name: 'RRSP Contribution Receipt', type: 'deduction', status: 'missing', version: 1, questionId: 'q4' },
+  { id: '5', clientId: '1', name: 'Capital Gains Statement', type: 'investment', status: 'complete', version: 1, uploadedAt: new Date('2024-01-18'), questionId: 'q8' },
+  { id: '6', clientId: '1', name: 'T5008 Slip', type: 'investment', status: 'pending', version: 1, questionId: 'q8' },
+  // Client 2 documents
+  { id: '7', clientId: '2', name: 'T4 Slip', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-11'), questionId: 'q1' },
+  { id: '8', clientId: '2', name: 'T4A Slip', type: 'income', status: 'complete', version: 2, uploadedAt: new Date('2024-01-20'), questionId: 'q2' },
+  { id: '9', clientId: '2', name: 'Medical Receipts', type: 'deduction', status: 'complete', version: 1, uploadedAt: new Date('2024-01-12'), questionId: 'q5' },
+  { id: '10', clientId: '2', name: 'Pharmacy Receipts', type: 'deduction', status: 'pending', version: 1, questionId: 'q5' },
+  // Other clients
+  { id: '11', clientId: '3', name: 'T4 Slip', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-06') },
+  { id: '12', clientId: '4', name: 'T4 Slip', type: 'income', status: 'complete', version: 1, uploadedAt: new Date('2024-01-03') },
+  { id: '13', clientId: '4', name: 'Medical Expenses', type: 'deduction', status: 'complete', version: 1, uploadedAt: new Date('2024-01-04') },
 ];
 
 export const mockPayments: Payment[] = [
