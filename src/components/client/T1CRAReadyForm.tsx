@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CopyableField } from './CopyableField';
 import { CopyableTable } from './CopyableTable';
 import { T1CRASection } from './T1CRASection';
-import { T1FormData, CRA_LINE_NUMBERS } from '@/types/t1-forms';
 import { getT1FormData } from '@/data/mockT1FormData';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -40,7 +39,7 @@ interface T1CRAReadyFormProps {
 
 const formatCurrency = (value: number | undefined): string => {
   if (value === undefined || value === null) return 'N/A';
-  return `$${value.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const formatPercentage = (value: number | undefined): string => {
@@ -50,7 +49,7 @@ const formatPercentage = (value: number | undefined): string => {
 
 const formatDate = (value: string | undefined): string => {
   if (!value) return 'N/A';
-  return new Date(value).toLocaleDateString('en-CA', {
+  return new Date(value).toLocaleDateString('en-IN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -89,25 +88,26 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
 
   const handleCopyFullSummary = async () => {
     const lines = [
-      `T1 Tax Return Summary - ${formData.personalInfo.firstName} ${formData.personalInfo.lastName} - ${filingYear}`,
+      `ITR Summary - ${formData.personalInfo.firstName} ${formData.personalInfo.lastName} - FY ${filingYear}`,
       ``,
       `INCOME`,
-      `Line ${CRA_LINE_NUMBERS.employmentIncome}: ${formatCurrency(totalEmploymentIncome)}`,
-      `Line ${CRA_LINE_NUMBERS.interestIncome}: ${formatCurrency(formData.investmentIncome?.[0]?.interestIncome)}`,
-      `Line ${CRA_LINE_NUMBERS.dividendIncome}: ${formatCurrency(totalInvestmentIncome - (formData.investmentIncome?.[0]?.interestIncome || 0))}`,
-      `Line ${CRA_LINE_NUMBERS.capitalGains}: ${formatCurrency(totalCapitalGains)}`,
-      formData.selfEmployment?.uberIncome ? `Line ${CRA_LINE_NUMBERS.selfEmploymentIncome}: ${formatCurrency(formData.selfEmployment.uberIncome.netIncome)}` : null,
+      `Employment Income: ${formatCurrency(totalEmploymentIncome)}`,
+      `Interest Income: ${formatCurrency(formData.investmentIncome?.[0]?.interestIncome)}`,
+      `Dividend Income: ${formatCurrency(totalInvestmentIncome - (formData.investmentIncome?.[0]?.interestIncome || 0))}`,
+      `Capital Gains: ${formatCurrency(totalCapitalGains)}`,
+      formData.selfEmployment?.uberIncome ? `Self-Employment Income: ${formatCurrency(formData.selfEmployment.uberIncome.netIncome)}` : null,
+      formData.selfEmployment?.businessIncome ? `Business Income: ${formatCurrency(formData.selfEmployment.businessIncome.netIncome)}` : null,
       ``,
-      `DEDUCTIONS`,
-      `Line ${CRA_LINE_NUMBERS.rrspDeduction}: ${formatCurrency(totalRRSP)}`,
-      `Line ${CRA_LINE_NUMBERS.unionDues}: ${formatCurrency(formData.unionDues?.[0]?.amountPaid)}`,
-      formData.movingExpenses?.applicable ? `Line ${CRA_LINE_NUMBERS.movingExpenses}: ${formatCurrency(formData.movingExpenses.totalMovingCost)}` : null,
-      formData.childcare?.length ? `Line ${CRA_LINE_NUMBERS.childcareExpenses}: ${formatCurrency(formData.childcare.reduce((s, c) => s + c.amountPaid, 0))}` : null,
+      `DEDUCTIONS (80C, 80D, etc.)`,
+      `PPF/ELSS/LIC: ${formatCurrency(totalRRSP)}`,
+      `Union/Professional Tax: ${formatCurrency(formData.unionDues?.[0]?.amountPaid)}`,
+      formData.movingExpenses?.applicable ? `Moving Expenses: ${formatCurrency(formData.movingExpenses.totalMovingCost)}` : null,
+      formData.childcare?.length ? `Childcare Expenses: ${formatCurrency(formData.childcare.reduce((s, c) => s + c.amountPaid, 0))}` : null,
       ``,
       `CREDITS`,
-      `Line ${CRA_LINE_NUMBERS.medicalExpenses}: ${formatCurrency(totalMedical)}`,
-      `Line ${CRA_LINE_NUMBERS.charitableDonations}: ${formatCurrency(totalDonations)}`,
-      formData.tuition?.length ? `Line ${CRA_LINE_NUMBERS.tuitionCredits}: ${formatCurrency(formData.tuition.reduce((s, t) => s + t.t2202aAmount, 0))}` : null,
+      `Medical/Health Insurance (80D): ${formatCurrency(totalMedical)}`,
+      `Charitable Donations (80G): ${formatCurrency(totalDonations)}`,
+      formData.tuition?.length ? `Education Expenses: ${formatCurrency(formData.tuition.reduce((s, t) => s + t.t2202aAmount, 0))}` : null,
     ].filter(Boolean).join('\n');
 
     try {
@@ -115,7 +115,7 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
       setCopiedSummary(true);
       toast({
         title: 'Full Summary Copied!',
-        description: 'T1 summary with CRA line numbers copied to clipboard',
+        description: 'ITR summary copied to clipboard',
         duration: 2000,
       });
       setTimeout(() => setCopiedSummary(false), 2000);
@@ -135,10 +135,10 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         <div>
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
-            T1 CRA Ready Form
+            ITR Ready Form
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Pre-filled data ready for CRA portal entry • {filingYear} Tax Year
+            Pre-filled data ready for ITR portal entry • FY {filingYear}
           </p>
         </div>
         <Button onClick={handleCopyFullSummary} className="transition-all duration-200 hover:scale-105">
@@ -150,7 +150,7 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
           ) : (
             <>
               <Copy className="h-4 w-4 mr-2" />
-              Copy Full T1 Summary
+              Copy Full ITR Summary
             </>
           )}
         </Button>
@@ -162,28 +162,24 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Employment Income</p>
             <p className="text-xl font-bold text-primary">{formatCurrency(totalEmploymentIncome)}</p>
-            <Badge variant="outline" className="text-[10px] mt-1">Line {CRA_LINE_NUMBERS.employmentIncome}</Badge>
           </CardContent>
         </Card>
         <Card className="bg-green-500/5 border-green-500/20">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">RRSP Deductions</p>
+            <p className="text-xs text-muted-foreground">80C Deductions</p>
             <p className="text-xl font-bold text-green-600">{formatCurrency(totalRRSP)}</p>
-            <Badge variant="outline" className="text-[10px] mt-1">Line {CRA_LINE_NUMBERS.rrspDeduction}</Badge>
           </CardContent>
         </Card>
         <Card className="bg-orange-500/5 border-orange-500/20">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Capital Gains</p>
             <p className="text-xl font-bold text-orange-600">{formatCurrency(totalCapitalGains)}</p>
-            <Badge variant="outline" className="text-[10px] mt-1">Line {CRA_LINE_NUMBERS.capitalGains}</Badge>
           </CardContent>
         </Card>
         <Card className="bg-purple-500/5 border-purple-500/20">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Charitable Donations</p>
+            <p className="text-xs text-muted-foreground">80G Donations</p>
             <p className="text-xl font-bold text-purple-600">{formatCurrency(totalDonations)}</p>
-            <Badge variant="outline" className="text-[10px] mt-1">Line {CRA_LINE_NUMBERS.charitableDonations}</Badge>
           </CardContent>
         </Card>
       </div>
@@ -198,7 +194,7 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <CopyableField label="First Name" value={formData.personalInfo.firstName} />
           <CopyableField label="Last Name" value={formData.personalInfo.lastName} />
-          <CopyableField label="SIN" value={formData.personalInfo.sin} />
+          <CopyableField label="PAN" value={formData.personalInfo.sin} />
           <CopyableField label="Date of Birth" value={formatDate(formData.personalInfo.dateOfBirth)} />
           <CopyableField label="Marital Status" value={formData.personalInfo.maritalStatus} />
           <CopyableField label="Email" value={formData.personalInfo.email} />
@@ -211,8 +207,8 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
           </div>
           {formData.personalInfo.directDeposit && formData.personalInfo.bankInfo && (
             <>
-              <CopyableField label="Bank Institution" value={formData.personalInfo.bankInfo.institution} />
-              <CopyableField label="Transit Number" value={formData.personalInfo.bankInfo.transitNumber} />
+              <CopyableField label="Bank Name" value={formData.personalInfo.bankInfo.institution} />
+              <CopyableField label="IFSC Code" value={formData.personalInfo.bankInfo.transitNumber} />
               <CopyableField label="Account Number" value={formData.personalInfo.bankInfo.accountNumber} />
             </>
           )}
@@ -221,10 +217,9 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
 
       {/* Employment Income */}
       <T1CRASection
-        title="Employment Income (T4/T4A)"
+        title="Employment Income (Form 16)"
         icon={<Briefcase className="h-5 w-5 text-primary" />}
         applicable={!!formData.employmentIncome?.length}
-        craLines={['Line 10100', 'Line 10400']}
         sectionData={formData.employmentIncome as unknown as Record<string, unknown>}
       >
         {formData.employmentIncome?.map((emp, idx) => (
@@ -240,14 +235,12 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
               <div className="sm:col-span-2">
                 <CopyableField label="Employer Address" value={emp.employerAddress} />
               </div>
-              <CopyableField label="Box 14 - Employment Income" value={formatCurrency(emp.t4Box14)} craLine="10100" />
-              <CopyableField label="Box 16 - CPP Contributions" value={formatCurrency(emp.t4Box16)} />
-              <CopyableField label="Box 18 - EI Premiums" value={formatCurrency(emp.t4Box18)} />
-              <CopyableField label="Box 22 - Income Tax Deducted" value={formatCurrency(emp.t4Box22)} />
-              <CopyableField label="Box 24 - EI Insurable Earnings" value={formatCurrency(emp.t4Box24)} />
-              <CopyableField label="Box 26 - CPP/QPP Pensionable" value={formatCurrency(emp.t4Box26)} />
-              {emp.t4Box44 && <CopyableField label="Box 44 - Union Dues" value={formatCurrency(emp.t4Box44)} />}
-              {emp.t4Box52 && <CopyableField label="Box 52 - Pension Adjustment" value={formatCurrency(emp.t4Box52)} />}
+              <CopyableField label="Gross Salary" value={formatCurrency(emp.t4Box14)} />
+              <CopyableField label="TDS Deducted" value={formatCurrency(emp.t4Box22)} />
+              <CopyableField label="Professional Tax" value={formatCurrency(emp.t4Box16)} />
+              <CopyableField label="EPF Contribution" value={formatCurrency(emp.t4Box18)} />
+              {emp.t4Box44 && <CopyableField label="Standard Deduction" value={formatCurrency(emp.t4Box44)} />}
+              {emp.t4Box52 && <CopyableField label="HRA Exemption" value={formatCurrency(emp.t4Box52)} />}
             </div>
             {idx < (formData.employmentIncome?.length || 0) - 1 && <Separator className="mt-6" />}
           </div>
@@ -256,10 +249,9 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
 
       {/* Investment Income */}
       <T1CRASection
-        title="Investment Income (T5/T3/T5008)"
+        title="Investment Income"
         icon={<TrendingUp className="h-5 w-5 text-primary" />}
         applicable={!!formData.investmentIncome?.length}
-        craLines={['Line 12000', 'Line 12100']}
         sectionData={formData.investmentIncome as unknown as Record<string, unknown>}
       >
         {formData.investmentIncome?.map((inv, idx) => (
@@ -270,10 +262,10 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {inv.interestIncome !== undefined && (
-                <CopyableField label="Interest Income" value={formatCurrency(inv.interestIncome)} craLine="12100" />
+                <CopyableField label="Interest Income" value={formatCurrency(inv.interestIncome)} />
               )}
               {inv.dividendsEligible !== undefined && (
-                <CopyableField label="Eligible Dividends" value={formatCurrency(inv.dividendsEligible)} craLine="12000" />
+                <CopyableField label="Dividend Income" value={formatCurrency(inv.dividendsEligible)} />
               )}
               {inv.dividendsOther !== undefined && (
                 <CopyableField label="Other Dividends" value={formatCurrency(inv.dividendsOther)} />
@@ -281,7 +273,7 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
               {inv.capitalGainsDistributions !== undefined && (
                 <CopyableField label="Capital Gains Distributions" value={formatCurrency(inv.capitalGainsDistributions)} />
               )}
-              {inv.foreignIncome !== undefined && (
+              {inv.foreignIncome !== undefined && inv.foreignIncome > 0 && (
                 <CopyableField label="Foreign Income" value={formatCurrency(inv.foreignIncome)} />
               )}
               {inv.returnOfCapital !== undefined && (
@@ -293,9 +285,9 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         ))}
       </T1CRASection>
 
-      {/* Foreign Property (T1135) */}
+      {/* Foreign Property */}
       <T1CRASection
-        title="Foreign Property (T1135)"
+        title="Foreign Assets & Income"
         icon={<Globe className="h-5 w-5 text-primary" />}
         applicable={!!formData.foreignProperty?.length}
         sectionData={formData.foreignProperty as unknown as Record<string, unknown>}
@@ -303,22 +295,21 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         <CopyableTable
           columns={[
             { key: 'country', header: 'Country' },
-            { key: 'propertyType', header: 'Property Type' },
-            { key: 'investmentDetails', header: 'Investment Details' },
-            { key: 'costAmount', header: 'Cost Amount (CAD)', format: (v) => formatCurrency(v as number) },
-            { key: 'grossIncome', header: 'Gross Income (CAD)', format: (v) => formatCurrency(v as number) },
-            { key: 'gainLoss', header: 'Gain/Loss (CAD)', format: (v) => formatCurrency(v as number) },
+            { key: 'propertyType', header: 'Asset Type' },
+            { key: 'investmentDetails', header: 'Details' },
+            { key: 'costAmount', header: 'Cost Amount', format: (v) => formatCurrency(v as number) },
+            { key: 'grossIncome', header: 'Gross Income', format: (v) => formatCurrency(v as number) },
+            { key: 'gainLoss', header: 'Gain/Loss', format: (v) => formatCurrency(v as number) },
           ]}
           data={formData.foreignProperty || []}
         />
       </T1CRASection>
 
-      {/* RRSP Contributions */}
+      {/* 80C Deductions (RRSP equivalent) */}
       <T1CRASection
-        title="RRSP Contributions"
+        title="Section 80C Deductions (PPF/ELSS/LIC)"
         icon={<DollarSign className="h-5 w-5 text-primary" />}
         applicable={!!formData.rrspContributions?.length}
-        craLines={['Line 20800']}
         sectionData={formData.rrspContributions as unknown as Record<string, unknown>}
       >
         <CopyableTable
@@ -327,13 +318,13 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
             { key: 'contributionDate', header: 'Date', format: (v) => formatDate(v as string) },
             { key: 'contributionAmount', header: 'Amount', format: (v) => formatCurrency(v as number) },
             { key: 'receiptNumber', header: 'Receipt #' },
-            { key: 'isSpouseRRSP', header: 'Spouse RRSP', format: (v) => v ? 'Yes' : 'No' },
+            { key: 'isSpouseRRSP', header: 'Joint Account', format: (v) => v ? 'Yes' : 'No' },
           ]}
           data={formData.rrspContributions || []}
         />
         <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Total RRSP Deduction</span>
+            <span className="text-sm font-medium">Total 80C Deduction</span>
             <span className="text-lg font-bold text-green-600">{formatCurrency(totalRRSP)}</span>
           </div>
         </div>
@@ -344,7 +335,6 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         title="Capital Gains"
         icon={<TrendingUp className="h-5 w-5 text-primary" />}
         applicable={!!formData.capitalGains?.length}
-        craLines={['Line 12700']}
         sectionData={formData.capitalGains as unknown as Record<string, unknown>}
       >
         {formData.capitalGains?.map((cg, idx) => (
@@ -366,19 +356,18 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
               <CopyableField label="Purchase Expenses" value={formatCurrency(cg.purchaseExpenses)} />
               <CopyableField label="Sale Expenses" value={formatCurrency(cg.saleExpenses)} />
               <CopyableField label="Capital Gain" value={formatCurrency(cg.capitalGain)} />
-              <CopyableField label="Taxable Capital Gain (50%)" value={formatCurrency(cg.taxableCapitalGain)} craLine="12700" />
+              <CopyableField label="Taxable Capital Gain" value={formatCurrency(cg.taxableCapitalGain)} />
             </div>
             {idx < (formData.capitalGains?.length || 0) - 1 && <Separator className="mt-6" />}
           </div>
         ))}
       </T1CRASection>
 
-      {/* Medical Expenses */}
+      {/* Medical Expenses / Health Insurance (80D) */}
       <T1CRASection
-        title="Medical Expenses"
+        title="Section 80D (Health Insurance & Medical)"
         icon={<HeartPulse className="h-5 w-5 text-primary" />}
         applicable={!!formData.medicalExpenses?.length}
-        craLines={['Line 33099']}
         sectionData={formData.medicalExpenses as unknown as Record<string, unknown>}
       >
         <CopyableTable
@@ -396,18 +385,17 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         />
         <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Total Net Medical Expenses</span>
+            <span className="text-sm font-medium">Total 80D Deduction</span>
             <span className="text-lg font-bold text-primary">{formatCurrency(totalMedical)}</span>
           </div>
         </div>
       </T1CRASection>
 
-      {/* Charitable Donations */}
+      {/* Charitable Donations (80G) */}
       <T1CRASection
-        title="Charitable Donations"
+        title="Section 80G (Charitable Donations)"
         icon={<Gift className="h-5 w-5 text-primary" />}
         applicable={!!formData.charitableDonations?.length}
-        craLines={['Line 34900']}
         sectionData={formData.charitableDonations as unknown as Record<string, unknown>}
       >
         <CopyableTable
@@ -422,18 +410,17 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         />
         <div className="mt-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Total Charitable Donations</span>
+            <span className="text-sm font-medium">Total 80G Donations</span>
             <span className="text-lg font-bold text-purple-600">{formatCurrency(totalDonations)}</span>
           </div>
         </div>
       </T1CRASection>
 
-      {/* Moving Expenses (Individual) */}
+      {/* Moving Expenses */}
       <T1CRASection
-        title="Moving Expenses (Individual)"
+        title="Relocation Expenses"
         icon={<Truck className="h-5 w-5 text-primary" />}
         applicable={!!formData.movingExpenses?.applicable}
-        craLines={['Line 21900']}
         sectionData={formData.movingExpenses as unknown as Record<string, unknown>}
       >
         {formData.movingExpenses && (
@@ -464,7 +451,7 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
               <CopyableField label="Movers & Packers" value={formatCurrency(formData.movingExpenses.moversPackersCost)} />
               <CopyableField label="Temporary Lodging" value={formatCurrency(formData.movingExpenses.temporaryLodgingCost)} />
               <CopyableField label="Other Moving Costs" value={formatCurrency(formData.movingExpenses.otherMovingCosts)} />
-              <CopyableField label="Total Moving Cost" value={formatCurrency(formData.movingExpenses.totalMovingCost)} craLine="21900" />
+              <CopyableField label="Total Moving Cost" value={formatCurrency(formData.movingExpenses.totalMovingCost)} />
             </div>
             <Separator />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -479,29 +466,18 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         )}
       </T1CRASection>
 
-      {/* Spouse Moving Expenses */}
-      <T1CRASection
-        title="Moving Expenses (Spouse)"
-        icon={<Truck className="h-5 w-5 text-muted-foreground" />}
-        applicable={!!formData.spouseMovingExpenses?.applicable}
-        craLines={['Line 21900']}
-      >
-        <p className="text-sm text-muted-foreground italic">Same structure as individual moving expenses</p>
-      </T1CRASection>
-
       {/* Self-Employment */}
       <T1CRASection
-        title="Self-Employment Income"
+        title="Self-Employment / Business Income"
         icon={<Building2 className="h-5 w-5 text-primary" />}
         applicable={!!formData.selfEmployment}
-        craLines={['Line 13500', 'Line 12600']}
         sectionData={formData.selfEmployment as unknown as Record<string, unknown>}
       >
         {formData.selfEmployment && (
           <div className="space-y-6">
             <div className="flex flex-wrap gap-3">
               <Badge variant={formData.selfEmployment.hasUberSkipDoorDash ? 'default' : 'outline'}>
-                {formData.selfEmployment.hasUberSkipDoorDash ? '✓' : '✗'} Uber / Skip / DoorDash
+                {formData.selfEmployment.hasUberSkipDoorDash ? '✓' : '✗'} Delivery / Ride-sharing
               </Badge>
               <Badge variant={formData.selfEmployment.hasGeneralBusiness ? 'default' : 'outline'}>
                 {formData.selfEmployment.hasGeneralBusiness ? '✓' : '✗'} General Business
@@ -513,7 +489,7 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
             
             {formData.selfEmployment.uberIncome && (
               <>
-                <h4 className="font-medium text-sm">Uber / Skip / DoorDash Income</h4>
+                <h4 className="font-medium text-sm">Delivery / Ride-sharing Income</h4>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <CopyableField label="Gross Income" value={formatCurrency(formData.selfEmployment.uberIncome.grossIncome)} />
                   <CopyableField label="Vehicle Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.vehicleExpenses)} />
@@ -522,7 +498,25 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
                   <CopyableField label="Other Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.otherExpenses)} />
                   <CopyableField label="Total Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.totalExpenses)} />
                   <CopyableField label="KM Driven" value={`${formData.selfEmployment.uberIncome.kmDriven} km`} />
-                  <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.uberIncome.netIncome)} craLine="13500" />
+                  <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.uberIncome.netIncome)} />
+                </div>
+              </>
+            )}
+
+            {formData.selfEmployment.businessIncome && (
+              <>
+                <h4 className="font-medium text-sm">Freelance / Business Income</h4>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <CopyableField label="Business Name" value={formData.selfEmployment.businessIncome.businessName} />
+                  <CopyableField label="Business Type" value={formData.selfEmployment.businessIncome.businessType} />
+                  <CopyableField label="Gross Income" value={formatCurrency(formData.selfEmployment.businessIncome.grossIncome)} />
+                  <CopyableField label="Advertising" value={formatCurrency(formData.selfEmployment.businessIncome.advertisingExpenses)} />
+                  <CopyableField label="Office Supplies" value={formatCurrency(formData.selfEmployment.businessIncome.officeSupplies)} />
+                  <CopyableField label="Professional Fees" value={formatCurrency(formData.selfEmployment.businessIncome.professionalFees)} />
+                  <CopyableField label="Software Subscriptions" value={formatCurrency(formData.selfEmployment.businessIncome.softwareSubscriptions)} />
+                  <CopyableField label="Other Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.otherExpenses)} />
+                  <CopyableField label="Total Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.totalExpenses)} />
+                  <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.businessIncome.netIncome)} />
                 </div>
               </>
             )}
@@ -530,16 +524,16 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         )}
       </T1CRASection>
 
-      {/* Work From Home (T2200) */}
+      {/* Work From Home */}
       <T1CRASection
-        title="Work From Home Expenses (T2200)"
+        title="Work From Home Expenses"
         icon={<Home className="h-5 w-5 text-primary" />}
         applicable={!!formData.workFromHome}
         sectionData={formData.workFromHome as unknown as Record<string, unknown>}
       >
         {formData.workFromHome && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <CopyableField label="Has T2200" value={formData.workFromHome.hasT2200 ? 'Yes' : 'No'} />
+            <CopyableField label="Employer Certification" value={formData.workFromHome.hasT2200 ? 'Yes' : 'No'} />
             <CopyableField label="Employer Name" value={formData.workFromHome.employerName} />
             <CopyableField label="Total Home Area (sq ft)" value={`${formData.workFromHome.totalHomeArea} sq ft`} />
             <CopyableField label="Work Area (sq ft)" value={`${formData.workFromHome.workArea} sq ft`} />
@@ -558,12 +552,11 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         )}
       </T1CRASection>
 
-      {/* Tuition / Student Info */}
+      {/* Tuition / Education */}
       <T1CRASection
-        title="Tuition / Student Info"
+        title="Education Expenses (Section 80E)"
         icon={<GraduationCap className="h-5 w-5 text-primary" />}
         applicable={!!formData.tuition?.length}
-        craLines={['Line 32300']}
         sectionData={formData.tuition as unknown as Record<string, unknown>}
       >
         {formData.tuition?.map((tuit, idx) => (
@@ -577,9 +570,9 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
                 <CopyableField label="Institution Address" value={tuit.institutionAddress} />
               </div>
               <CopyableField label="Program Name" value={tuit.programName} />
-              <CopyableField label="T2202A Amount" value={formatCurrency(tuit.t2202aAmount)} craLine="32300" />
+              <CopyableField label="Tuition Amount" value={formatCurrency(tuit.t2202aAmount)} />
               <CopyableField label="Tuition Fees" value={formatCurrency(tuit.tuitionFees)} />
-              <CopyableField label="Textbooks" value={formatCurrency(tuit.textbooks)} />
+              <CopyableField label="Books & Materials" value={formatCurrency(tuit.textbooks)} />
               <CopyableField label="Months Full-Time" value={tuit.monthsFullTime.toString()} />
               <CopyableField label="Months Part-Time" value={tuit.monthsPartTime.toString()} />
             </div>
@@ -588,17 +581,16 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         ))}
       </T1CRASection>
 
-      {/* Union Dues */}
+      {/* Professional Tax / Union Dues */}
       <T1CRASection
-        title="Union Dues"
+        title="Professional Tax"
         icon={<Users className="h-5 w-5 text-primary" />}
         applicable={!!formData.unionDues?.length}
-        craLines={['Line 21200']}
         sectionData={formData.unionDues as unknown as Record<string, unknown>}
       >
         <CopyableTable
           columns={[
-            { key: 'unionName', header: 'Institution Name' },
+            { key: 'unionName', header: 'Description' },
             { key: 'amountPaid', header: 'Amount', format: (v) => formatCurrency(v as number) },
           ]}
           data={formData.unionDues || []}
@@ -610,7 +602,6 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         title="Childcare Expenses"
         icon={<Baby className="h-5 w-5 text-primary" />}
         applicable={!!formData.childcare?.length}
-        craLines={['Line 21400']}
         sectionData={formData.childcare as unknown as Record<string, unknown>}
       >
         <CopyableTable
@@ -625,30 +616,29 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         />
       </T1CRASection>
 
-      {/* First-Time Filer */}
+      {/* First-Time Filer / NRI Status */}
       <T1CRASection
-        title="First-Time Filer"
+        title="NRI / First-Time Filer Information"
         icon={<Plane className="h-5 w-5 text-primary" />}
         applicable={!!formData.firstTimeFiler}
         sectionData={formData.firstTimeFiler as unknown as Record<string, unknown>}
       >
         {formData.firstTimeFiler && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <CopyableField label="Date of Landing (Individual)" value={formatDate(formData.firstTimeFiler.dateOfLanding)} />
+            <CopyableField label="Date of Return to India" value={formatDate(formData.firstTimeFiler.dateOfLanding)} />
             <CopyableField label="Country of Origin" value={formData.firstTimeFiler.countryOfOrigin} />
-            <CopyableField label="Income Outside Canada" value={formatCurrency(formData.firstTimeFiler.incomeOutsideCanada)} />
-            <CopyableField label="Tax Paid Outside Canada" value={formatCurrency(formData.firstTimeFiler.taxPaidOutsideCanada)} />
-            <CopyableField label="Assets Outside Canada" value={formatCurrency(formData.firstTimeFiler.assetsOutsideCanada)} />
+            <CopyableField label="Income Outside India" value={formatCurrency(formData.firstTimeFiler.incomeOutsideCanada)} />
+            <CopyableField label="Tax Paid Outside India" value={formatCurrency(formData.firstTimeFiler.taxPaidOutsideCanada)} />
+            <CopyableField label="Assets Outside India" value={formatCurrency(formData.firstTimeFiler.assetsOutsideCanada)} />
           </div>
         )}
       </T1CRASection>
 
       {/* Other Income */}
       <T1CRASection
-        title="Other Income (No Slips)"
+        title="Other Income (No TDS)"
         icon={<Receipt className="h-5 w-5 text-primary" />}
         applicable={!!formData.otherIncome?.length}
-        craLines={['Line 13000']}
         sectionData={formData.otherIncome as unknown as Record<string, unknown>}
       >
         <CopyableTable
@@ -664,10 +654,9 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
 
       {/* Professional Dues */}
       <T1CRASection
-        title="Professional Dues / Exams / Licenses"
+        title="Professional Membership / Exam Fees"
         icon={<Award className="h-5 w-5 text-primary" />}
         applicable={!!formData.professionalDues?.length}
-        craLines={['Line 21200']}
         sectionData={formData.professionalDues as unknown as Record<string, unknown>}
       >
         <CopyableTable
@@ -682,9 +671,9 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         />
       </T1CRASection>
 
-      {/* Children's Arts / Sports Credit */}
+      {/* Children's Credits */}
       <T1CRASection
-        title="Children's Arts / Sports Credit"
+        title="Children's Education / Activities"
         icon={<Palette className="h-5 w-5 text-primary" />}
         applicable={!!formData.childrenCredits?.length}
         sectionData={formData.childrenCredits as unknown as Record<string, unknown>}
@@ -698,44 +687,37 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
             { key: 'amountPaid', header: 'Amount', format: (v) => formatCurrency(v as number) },
           ]}
           data={formData.childrenCredits || []}
-          emptyMessage="No children's credits reported"
+          emptyMessage="No children's activities reported"
         />
       </T1CRASection>
 
       {/* Rent / Property Tax */}
       <T1CRASection
-        title="Rent / Property Tax (Ontario / Alberta / Quebec)"
+        title="Rent / Property Tax"
         icon={<Home className="h-5 w-5 text-primary" />}
         applicable={!!formData.rentPropertyTax}
-        craLines={['Line 61220', 'Line 61110']}
         sectionData={formData.rentPropertyTax as unknown as Record<string, unknown>}
       >
         {formData.rentPropertyTax && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <CopyableField label="Rent or Own" value={formData.rentPropertyTax.rentOrOwn === 'rent' ? 'Renting' : 'Own Property'} />
-            <CopyableField label="Province" value={formData.rentPropertyTax.province} />
-            <div className="sm:col-span-3">
+            <CopyableField label="Rent or Own" value={formData.rentPropertyTax.rentOrOwn === 'rent' ? 'Rented' : 'Owned'} />
+            <div className="sm:col-span-2">
               <CopyableField label="Property Address" value={formData.rentPropertyTax.propertyAddress} />
             </div>
+            <CopyableField label="State" value={formData.rentPropertyTax.province} />
             {formData.rentPropertyTax.rentAmount && (
-              <CopyableField label="Annual Rent Paid" value={formatCurrency(formData.rentPropertyTax.rentAmount)} craLine="61220" />
+              <CopyableField label="Annual Rent Paid" value={formatCurrency(formData.rentPropertyTax.rentAmount)} />
             )}
             {formData.rentPropertyTax.propertyTaxAmount && (
-              <CopyableField label="Property Tax Paid" value={formatCurrency(formData.rentPropertyTax.propertyTaxAmount)} craLine="61110" />
+              <CopyableField label="Property Tax" value={formatCurrency(formData.rentPropertyTax.propertyTaxAmount)} />
             )}
+            <CopyableField label="Total Housing Cost" value={formatCurrency(formData.rentPropertyTax.occupancyCost)} />
             {formData.rentPropertyTax.landlordName && (
-              <CopyableField label="Landlord Name" value={formData.rentPropertyTax.landlordName} />
-            )}
-            {formData.rentPropertyTax.landlordAddress && (
-              <div className="sm:col-span-2">
-                <CopyableField label="Landlord Address" value={formData.rentPropertyTax.landlordAddress} />
-              </div>
-            )}
-            <CopyableField label="Occupancy Cost" value={formatCurrency(formData.rentPropertyTax.occupancyCost)} />
-            {formData.rentPropertyTax.province === 'ON' && (
               <>
-                <CopyableField label="Ontario Energy Credit" value={formData.rentPropertyTax.ontarioEnergyCredit ? 'Yes' : 'No'} />
-                <CopyableField label="Ontario Sales Tax Credit" value={formData.rentPropertyTax.ontarioSalesTaxCredit ? 'Yes' : 'No'} />
+                <CopyableField label="Landlord Name" value={formData.rentPropertyTax.landlordName} />
+                <div className="sm:col-span-2">
+                  <CopyableField label="Landlord Address" value={formData.rentPropertyTax.landlordAddress} />
+                </div>
               </>
             )}
           </div>
