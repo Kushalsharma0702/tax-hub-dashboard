@@ -412,9 +412,43 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <CopyableField label="Business Name" value={formData.selfEmployment.businessIncome.businessName} />
                   <CopyableField label="Business Type" value={formData.selfEmployment.businessIncome.businessType} />
-                  <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.businessIncome.netIncome)} />
+                  <CopyableField label="Gross Revenue" value={formatCurrency(formData.selfEmployment.businessIncome.grossRevenue)} />
                   <CopyableField label="Total Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.totalExpenses)} />
+                  <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.businessIncome.netIncome)} />
+                  <CopyableField label="Advertising" value={formatCurrency(formData.selfEmployment.businessIncome.advertisingExpenses)} />
+                  <CopyableField label="Office Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.officeExpenses)} />
+                  <CopyableField label="Professional Fees" value={formatCurrency(formData.selfEmployment.businessIncome.professionalFees)} />
+                  <CopyableField label="Travel Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.travelExpenses)} />
+                  <CopyableField label="Vehicle Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.vehicleExpenses)} />
+                  <CopyableField label="Other Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.otherExpenses)} />
                 </div>
+              </>
+            )}
+
+            {formData.selfEmployment.rentalIncome && formData.selfEmployment.rentalIncome.length > 0 && (
+              <>
+                <h4 className="font-medium text-sm">Rental Income</h4>
+                {formData.selfEmployment.rentalIncome.map((rent, idx) => (
+                  <div key={idx} className="mb-6 last:mb-0">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="sm:col-span-3">
+                        <CopyableField label="Property Address" value={rent.propertyAddress} />
+                      </div>
+                      <CopyableField label="Property Type" value={rent.propertyType} />
+                      <CopyableField label="Ownership %" value={`${rent.ownershipPercentage}%`} />
+                      <CopyableField label="Gross Rental Income" value={formatCurrency(rent.grossRentalIncome)} />
+                      <CopyableField label="Property Taxes" value={formatCurrency(rent.propertyTaxes)} />
+                      <CopyableField label="Insurance" value={formatCurrency(rent.insurance)} />
+                      <CopyableField label="Mortgage Interest" value={formatCurrency(rent.mortgageInterest)} />
+                      <CopyableField label="Repairs & Maintenance" value={formatCurrency(rent.repairsAndMaintenance)} />
+                      <CopyableField label="Utilities" value={formatCurrency(rent.utilities)} />
+                      <CopyableField label="Management Fees" value={formatCurrency(rent.managementFees)} />
+                      <CopyableField label="Other Expenses" value={formatCurrency(rent.otherExpenses)} />
+                      <CopyableField label="Total Expenses" value={formatCurrency(rent.totalExpenses)} />
+                      <CopyableField label="Net Rental Income" value={formatCurrency(rent.netRentalIncome)} />
+                    </div>
+                  </div>
+                ))}
               </>
             )}
           </div>
