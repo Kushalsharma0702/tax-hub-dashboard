@@ -10,21 +10,22 @@ interface Column {
   format?: (value: unknown) => string;
 }
 
-interface CopyableTableProps<T extends Record<string, unknown>> {
+interface CopyableTableProps {
   title?: string;
   columns: Column[];
-  data: T[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any[];
   className?: string;
   emptyMessage?: string;
 }
 
-export function CopyableTable<T extends Record<string, unknown>>({
+export function CopyableTable({
   title,
   columns,
   data,
   className,
   emptyMessage = 'No data available',
-}: CopyableTableProps<T>) {
+}: CopyableTableProps) {
   const [copiedRow, setCopiedRow] = useState<number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const { toast } = useToast();
@@ -35,10 +36,17 @@ export function CopyableTable<T extends Record<string, unknown>>({
     return String(value);
   };
 
+  const getRowValue = (row: unknown, key: string): unknown => {
+    if (typeof row === 'object' && row !== null) {
+      return (row as Record<string, unknown>)[key];
+    }
+    return undefined;
+  };
+
   const handleCopyRow = async (rowIndex: number) => {
     const row = data[rowIndex];
     const text = columns
-      .map((col) => `${col.header}: ${formatValue(col, row[col.key])}`)
+      .map((col) => `${col.header}: ${formatValue(col, getRowValue(row, col.key))}`)
       .join('\n');
 
     try {
@@ -62,7 +70,7 @@ export function CopyableTable<T extends Record<string, unknown>>({
   const handleCopyAll = async () => {
     const header = columns.map((col) => col.header).join('\t');
     const rows = data.map((row) =>
-      columns.map((col) => formatValue(col, row[col.key])).join('\t')
+      columns.map((col) => formatValue(col, getRowValue(row, col.key))).join('\t')
     );
     const text = [header, ...rows].join('\n');
 
@@ -140,7 +148,7 @@ export function CopyableTable<T extends Record<string, unknown>>({
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 font-medium">
-                    {formatValue(col, row[col.key])}
+                    {formatValue(col, getRowValue(row, col.key))}
                   </td>
                 ))}
                 <td className="px-4 py-3">

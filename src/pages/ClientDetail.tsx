@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { T1SectionCard } from '@/components/client/T1SectionCard';
 import { DocumentPreviewModal } from '@/components/client/DocumentPreviewModal';
+import { T1CRAReadyForm } from '@/components/client/T1CRAReadyForm';
 import { mockClients, mockDocuments, mockPayments, mockNotes, mockQuestionnaires } from '@/data/mockData';
 import { STATUS_LABELS, ClientStatus, PERMISSIONS, Note, Document as DocType, T1Question, DocumentStatus } from '@/types';
 import {
@@ -300,14 +301,18 @@ export default function ClientDetail() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
             <TabsTrigger value="overview" className="transition-all duration-200">
               <User className="h-4 w-4 mr-2" />
               Overview
             </TabsTrigger>
+            <TabsTrigger value="cra-form" className="transition-all duration-200">
+              <FileText className="h-4 w-4 mr-2" />
+              T1 – CRA Ready
+            </TabsTrigger>
             <TabsTrigger value="questionnaire" className="transition-all duration-200">
               <FileText className="h-4 w-4 mr-2" />
-              T1 Form
+              Documents
             </TabsTrigger>
             <TabsTrigger value="payments" className="transition-all duration-200">
               <CreditCard className="h-4 w-4 mr-2" />
@@ -475,6 +480,11 @@ export default function ClientDetail() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* T1 CRA Ready Form Tab */}
+          <TabsContent value="cra-form" className="mt-6 animate-fade-in">
+            <T1CRAReadyForm clientId={client.id} filingYear={client.filingYear} />
           </TabsContent>
 
           {/* T1 Questionnaire Tab - Redesigned with Inline Documents */}
