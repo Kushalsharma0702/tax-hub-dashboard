@@ -329,40 +329,44 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
       >
         {formData.movingExpenses && (
           <div className="space-y-6">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm text-muted-foreground">Old Address</h4>
-                <CopyableField
-                  label="Full Address"
-                  value={`${formData.movingExpenses.oldAddress.street}, ${formData.movingExpenses.oldAddress.city}, ${formData.movingExpenses.oldAddress.province} ${formData.movingExpenses.oldAddress.postalCode}`}
-                />
-              </div>
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm text-muted-foreground">New Address</h4>
-                <CopyableField
-                  label="Full Address"
-                  value={`${formData.movingExpenses.newAddress.street}, ${formData.movingExpenses.newAddress.city}, ${formData.movingExpenses.newAddress.province} ${formData.movingExpenses.newAddress.postalCode}`}
-                />
+            {/* Addresses & Distances */}
+            <div>
+              <h4 className="font-medium text-sm text-muted-foreground mb-3">Addresses & Distances</h4>
+              <div className="grid gap-3">
+                <CopyableField label="Old Address" value={formData.movingExpenses.oldAddress} />
+                <CopyableField label="New Address" value={formData.movingExpenses.newAddress} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <CopyableField label="Distance Old → New" value={formData.movingExpenses.distanceFromOldToNew} />
+                  <CopyableField label="Distance New → Office" value={formData.movingExpenses.distanceFromNewToOffice} />
+                </div>
               </div>
             </div>
+            
             <Separator />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <CopyableField label="Distance Old → New (KM)" value={`${formData.movingExpenses.distanceFromOldToNew || formData.movingExpenses.distanceOldToOldOffice} km`} />
-              <CopyableField label="Distance New → Office (KM)" value={`${formData.movingExpenses.distanceFromNewToOffice || formData.movingExpenses.distanceNewToNewOffice} km`} />
-              <CopyableField label="Date of Travel" value={formatDate(formData.movingExpenses.dateOfTravel)} />
-              <CopyableField label="Air Tickets / Travel Cost" value={formatCurrency(formData.movingExpenses.airTicketCost || formData.movingExpenses.airTicketsCost)} />
-              <CopyableField label="Movers & Packers" value={formatCurrency(formData.movingExpenses.moversAndPackers || formData.movingExpenses.moversPackersCost)} />
-              <CopyableField label="Meals & Other Costs" value={formatCurrency(formData.movingExpenses.mealsAndOtherCost || formData.movingExpenses.travelMealsCost)} />
-              <CopyableField label="Any Other Cost" value={formatCurrency(formData.movingExpenses.anyOtherCost || formData.movingExpenses.otherMovingCosts)} />
-              <CopyableField label="Total Moving Cost" value={formatCurrency(formData.movingExpenses.totalMovingCost)} />
+            
+            {/* Travel & Logistics Costs */}
+            <div>
+              <h4 className="font-medium text-sm text-muted-foreground mb-3">Travel & Logistics Costs</h4>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <CopyableField label="Date of Travel" value={formatDate(formData.movingExpenses.dateOfTravel)} />
+                <CopyableField label="Air Tickets" value={formatCurrency(formData.movingExpenses.airTicketsCost)} />
+                <CopyableField label="Movers & Packers" value={formatCurrency(formData.movingExpenses.moversPackersCost)} />
+                <CopyableField label="Travel Meals & Accommodation" value={formatCurrency(formData.movingExpenses.travelMealsCost)} />
+                <CopyableField label="Other Moving Costs" value={formatCurrency(formData.movingExpenses.otherMovingCosts)} />
+                <CopyableField label="Total Moving Cost" value={formatCurrency(formData.movingExpenses.totalMovingCost)} />
+              </div>
             </div>
+            
             <Separator />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <CopyableField label="Date of Joining" value={formatDate(formData.movingExpenses.dateOfJoining || formData.movingExpenses.dateJoinedCompany)} />
-              <CopyableField label="Company Name" value={formData.movingExpenses.companyName} />
-              <CopyableField label="Gross Income After Moving" value={formatCurrency(formData.movingExpenses.grossIncomeAfterMoving || formData.movingExpenses.incomeEarnedAfterMove)} />
-              <div className="sm:col-span-3">
-                <CopyableField label="New Employer Address" value={formData.movingExpenses.newEmployerAddress || formData.movingExpenses.employerAddress} />
+            
+            {/* Employment Details After Move */}
+            <div>
+              <h4 className="font-medium text-sm text-muted-foreground mb-3">Employment Details After Move</h4>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <CopyableField label="Date of Joining" value={formatDate(formData.movingExpenses.dateJoinedCompany)} />
+                <CopyableField label="Company Name" value={formData.movingExpenses.companyName} />
+                <CopyableField label="Employer Address" value={formData.movingExpenses.employerAddress} />
+                <CopyableField label="Income Earned After Move" value={formatCurrency(formData.movingExpenses.incomeEarnedAfterMove)} />
               </div>
             </div>
           </div>
@@ -390,62 +394,223 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
               </Badge>
             </div>
             
+            {/* Uber/Skip/DoorDash Income - Full Detail */}
             {formData.selfEmployment.uberIncome && (
               <>
-                <h4 className="font-medium text-sm">Uber/Skip/DoorDash Income</h4>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <CopyableField label="Gross Income" value={formatCurrency(formData.selfEmployment.uberIncome.netIncome)} />
-                  <CopyableField label="Vehicle Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.vehicleExpenses)} />
-                  <CopyableField label="Phone Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.phoneExpenses)} />
-                  <CopyableField label="Supplies Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.suppliesExpenses)} />
-                  <CopyableField label="Other Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.otherExpenses)} />
-                  <CopyableField label="Total Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.totalExpenses)} />
-                  <CopyableField label="KM Driven" value={`${formData.selfEmployment.uberIncome.kmDriven} km`} />
-                  <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.uberIncome.netIncome)} />
+                <Separator />
+                <h4 className="font-semibold text-base">Uber/Skip/DoorDash Income</h4>
+                
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Statement & HST Information</h5>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <CopyableField label="Uber/Skip Statement" value={formData.selfEmployment.uberIncome.uberSkipStatement || 'N/A'} />
+                    <CopyableField label="Business HST Number" value={formData.selfEmployment.uberIncome.businessHstNumber || 'N/A'} />
+                    <CopyableField label="HST Access Code" value={formData.selfEmployment.uberIncome.hstAccessCode || 'N/A'} />
+                    <CopyableField label="HST Filing Period" value={formData.selfEmployment.uberIncome.hstFillingPeriod || 'N/A'} />
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Kilometers Driven</h5>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <CopyableField label="Total KM for Uber/Skip" value={`${formData.selfEmployment.uberIncome.totalKmForUberSkip || 0} km`} />
+                    <CopyableField label="Total Official KM Driven" value={`${formData.selfEmployment.uberIncome.totalOfficialKmDriven || 0} km`} />
+                    <CopyableField label="Total KM Driven (Entire Year)" value={`${formData.selfEmployment.uberIncome.totalKmDrivenEntireYear || 0} km`} />
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Operating Expenses</h5>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <CopyableField label="Meals" value={formatCurrency(formData.selfEmployment.uberIncome.meals)} />
+                    <CopyableField label="Telephone" value={formatCurrency(formData.selfEmployment.uberIncome.telephone)} />
+                    <CopyableField label="Parking Fees" value={formatCurrency(formData.selfEmployment.uberIncome.parkingFees)} />
+                    <CopyableField label="Cleaning Expenses" value={formatCurrency(formData.selfEmployment.uberIncome.cleaningExpenses)} />
+                    <CopyableField label="Safety Inspection" value={formatCurrency(formData.selfEmployment.uberIncome.safetyInspection)} />
+                    <CopyableField label="Winter Tire Change" value={formatCurrency(formData.selfEmployment.uberIncome.winterTireChange)} />
+                    <CopyableField label="Oil Change & Maintenance" value={formatCurrency(formData.selfEmployment.uberIncome.oilChangeAndMaintenance)} />
+                    <CopyableField label="Depreciation" value={formatCurrency(formData.selfEmployment.uberIncome.depreciation)} />
+                    <CopyableField label="Insurance on Vehicle" value={formatCurrency(formData.selfEmployment.uberIncome.insuranceOnVehicle)} />
+                    <CopyableField label="Gas" value={formatCurrency(formData.selfEmployment.uberIncome.gas)} />
+                    <CopyableField label="Financing Cost / Interest" value={formatCurrency(formData.selfEmployment.uberIncome.financingCostInterest)} />
+                    <CopyableField label="Lease Cost" value={formatCurrency(formData.selfEmployment.uberIncome.leaseCost)} />
+                    <CopyableField label="Other Expense" value={formatCurrency(formData.selfEmployment.uberIncome.otherExpense)} />
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Summary</h5>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.uberIncome.netIncome)} className="font-semibold" />
+                  </div>
                 </div>
               </>
             )}
 
-            {formData.selfEmployment.businessIncome && (
+            {/* General Business Income - Full Detail (60+ fields) */}
+            {formData.selfEmployment.generalBusiness && (
               <>
-                <h4 className="font-medium text-sm">General Business Income</h4>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <CopyableField label="Business Name" value={formData.selfEmployment.businessIncome.businessName} />
-                  <CopyableField label="Business Type" value={formData.selfEmployment.businessIncome.businessType} />
-                  <CopyableField label="Gross Revenue" value={formatCurrency(formData.selfEmployment.businessIncome.grossRevenue)} />
-                  <CopyableField label="Total Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.totalExpenses)} />
-                  <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.businessIncome.netIncome)} />
-                  <CopyableField label="Advertising" value={formatCurrency(formData.selfEmployment.businessIncome.advertisingExpenses)} />
-                  <CopyableField label="Office Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.officeExpenses)} />
-                  <CopyableField label="Professional Fees" value={formatCurrency(formData.selfEmployment.businessIncome.professionalFees)} />
-                  <CopyableField label="Travel Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.travelExpenses)} />
-                  <CopyableField label="Vehicle Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.vehicleExpenses)} />
-                  <CopyableField label="Other Expenses" value={formatCurrency(formData.selfEmployment.businessIncome.otherExpenses)} />
+                <Separator />
+                <h4 className="font-semibold text-base">General Business Income</h4>
+
+                {/* Income & Cost of Goods Sold */}
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Income & Cost of Goods Sold</h5>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <CopyableField label="Sales / Commissions / Fees" value={formatCurrency(formData.selfEmployment.generalBusiness.salesCommissionsFees)} />
+                    <CopyableField label="Minus HST Collected" value={formatCurrency(formData.selfEmployment.generalBusiness.minusHstCollected)} />
+                    <CopyableField label="Gross Income" value={formatCurrency(formData.selfEmployment.generalBusiness.grossIncome)} className="font-medium" />
+                    <CopyableField label="Opening Inventory" value={formatCurrency(formData.selfEmployment.generalBusiness.openingInventory)} />
+                    <CopyableField label="Purchases During Year" value={formatCurrency(formData.selfEmployment.generalBusiness.purchasesDuringYear)} />
+                    <CopyableField label="Subcontracts" value={formatCurrency(formData.selfEmployment.generalBusiness.subcontracts)} />
+                    <CopyableField label="Direct Wage Costs" value={formatCurrency(formData.selfEmployment.generalBusiness.directWageCosts)} />
+                    <CopyableField label="Other Costs" value={formatCurrency(formData.selfEmployment.generalBusiness.otherCosts)} />
+                    <CopyableField label="Purchase Returns" value={formatCurrency(formData.selfEmployment.generalBusiness.purchaseReturns)} />
+                  </div>
+                </div>
+
+                {/* Operating Expenses */}
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Operating Expenses</h5>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <CopyableField label="Advertising" value={formatCurrency(formData.selfEmployment.generalBusiness.advertising)} />
+                    <CopyableField label="Meals & Entertainment" value={formatCurrency(formData.selfEmployment.generalBusiness.mealsEntertainment)} />
+                    <CopyableField label="Bad Debts" value={formatCurrency(formData.selfEmployment.generalBusiness.badDebts)} />
+                    <CopyableField label="Insurance" value={formatCurrency(formData.selfEmployment.generalBusiness.insurance)} />
+                    <CopyableField label="Interest" value={formatCurrency(formData.selfEmployment.generalBusiness.interest)} />
+                    <CopyableField label="Fees, Licenses & Dues" value={formatCurrency(formData.selfEmployment.generalBusiness.feesLicensesDues)} />
+                    <CopyableField label="Office Expenses" value={formatCurrency(formData.selfEmployment.generalBusiness.officeExpenses)} />
+                    <CopyableField label="Supplies" value={formatCurrency(formData.selfEmployment.generalBusiness.supplies)} />
+                    <CopyableField label="Legal & Accounting Fees" value={formatCurrency(formData.selfEmployment.generalBusiness.legalAccountingFees)} />
+                    <CopyableField label="Management & Administration" value={formatCurrency(formData.selfEmployment.generalBusiness.managementAdministration)} />
+                    <CopyableField label="Office Rent" value={formatCurrency(formData.selfEmployment.generalBusiness.officeRent)} />
+                    <CopyableField label="Maintenance & Repairs" value={formatCurrency(formData.selfEmployment.generalBusiness.maintenanceRepairs)} />
+                    <CopyableField label="Salaries, Wages & Benefits" value={formatCurrency(formData.selfEmployment.generalBusiness.salariesWagesBenefits)} />
+                    <CopyableField label="Property Tax" value={formatCurrency(formData.selfEmployment.generalBusiness.propertyTax)} />
+                    <CopyableField label="Travel" value={formatCurrency(formData.selfEmployment.generalBusiness.travel)} />
+                    <CopyableField label="Telephone & Utilities" value={formatCurrency(formData.selfEmployment.generalBusiness.telephoneUtilities)} />
+                    <CopyableField label="Fuel Costs (Excl. Vehicle)" value={formatCurrency(formData.selfEmployment.generalBusiness.fuelCosts)} />
+                    <CopyableField label="Delivery / Freight / Express" value={formatCurrency(formData.selfEmployment.generalBusiness.deliveryFreightExpress)} />
+                    <CopyableField label="Other Expense 1" value={formatCurrency(formData.selfEmployment.generalBusiness.otherExpense1)} />
+                    <CopyableField label="Other Expense 2" value={formatCurrency(formData.selfEmployment.generalBusiness.otherExpense2)} />
+                    <CopyableField label="Other Expense 3" value={formatCurrency(formData.selfEmployment.generalBusiness.otherExpense3)} />
+                  </div>
+                </div>
+
+                {/* Home Office */}
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Home Office</h5>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <CopyableField label="Area of Home for Business (sq ft)" value={formData.selfEmployment.generalBusiness.areaOfHomeForBusiness?.toString() || '0'} />
+                    <CopyableField label="Total Area of Home (sq ft)" value={formData.selfEmployment.generalBusiness.totalAreaOfHome?.toString() || '0'} />
+                    <CopyableField label="Heat" value={formatCurrency(formData.selfEmployment.generalBusiness.heat)} />
+                    <CopyableField label="Electricity" value={formatCurrency(formData.selfEmployment.generalBusiness.electricity)} />
+                    <CopyableField label="House Insurance" value={formatCurrency(formData.selfEmployment.generalBusiness.houseInsurance)} />
+                    <CopyableField label="Home Maintenance" value={formatCurrency(formData.selfEmployment.generalBusiness.homeMaintenance)} />
+                    <CopyableField label="Mortgage Interest" value={formatCurrency(formData.selfEmployment.generalBusiness.mortgageInterest)} />
+                    <CopyableField label="Property Taxes" value={formatCurrency(formData.selfEmployment.generalBusiness.propertyTaxes)} />
+                    <CopyableField label="House Rent" value={formatCurrency(formData.selfEmployment.generalBusiness.houseRent)} />
+                    <CopyableField label="Home Other Expense 1" value={formatCurrency(formData.selfEmployment.generalBusiness.homeOtherExpense1)} />
+                    <CopyableField label="Home Other Expense 2" value={formatCurrency(formData.selfEmployment.generalBusiness.homeOtherExpense2)} />
+                  </div>
+                </div>
+
+                {/* Vehicle */}
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Vehicle</h5>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <CopyableField label="KM Driven for Business" value={`${formData.selfEmployment.generalBusiness.kmDrivenForBusiness || 0} km`} />
+                    <CopyableField label="Total KM Driven in Year" value={`${formData.selfEmployment.generalBusiness.totalKmDrivenInYear || 0} km`} />
+                    <CopyableField label="Vehicle Fuel" value={formatCurrency(formData.selfEmployment.generalBusiness.vehicleFuel)} />
+                    <CopyableField label="Vehicle Insurance" value={formatCurrency(formData.selfEmployment.generalBusiness.vehicleInsurance)} />
+                    <CopyableField label="License & Registration" value={formatCurrency(formData.selfEmployment.generalBusiness.licenseRegistration)} />
+                    <CopyableField label="Vehicle Maintenance" value={formatCurrency(formData.selfEmployment.generalBusiness.vehicleMaintenance)} />
+                    <CopyableField label="Business Parking" value={formatCurrency(formData.selfEmployment.generalBusiness.businessParking)} />
+                    <CopyableField label="Vehicle Other Expense" value={formatCurrency(formData.selfEmployment.generalBusiness.vehicleOtherExpense)} />
+                    <CopyableField label="Leasing / Finance Payments" value={formatCurrency(formData.selfEmployment.generalBusiness.leasingFinancePayments)} />
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <div>
+                  <h5 className="font-medium text-sm text-muted-foreground mb-3">Summary</h5>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <CopyableField label="Total Expenses" value={formatCurrency(formData.selfEmployment.generalBusiness.totalExpenses)} className="font-medium" />
+                    <CopyableField label="Net Income" value={formatCurrency(formData.selfEmployment.generalBusiness.netIncome)} className="font-semibold" />
+                  </div>
                 </div>
               </>
             )}
 
+            {/* Rental Income - Extended with Co-owners */}
             {formData.selfEmployment.rentalIncome && formData.selfEmployment.rentalIncome.length > 0 && (
               <>
-                <h4 className="font-medium text-sm">Rental Income</h4>
+                <Separator />
+                <h4 className="font-semibold text-base">Rental Income</h4>
                 {formData.selfEmployment.rentalIncome.map((rent, idx) => (
-                  <div key={idx} className="mb-6 last:mb-0">
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      <div className="sm:col-span-3">
-                        <CopyableField label="Property Address" value={rent.propertyAddress} />
+                  <div key={idx} className="mb-6 last:mb-0 p-4 border rounded-lg">
+                    <h5 className="font-medium text-base mb-4">Property {idx + 1}</h5>
+                    
+                    {/* Property Details */}
+                    <div className="space-y-4">
+                      <div>
+                        <h6 className="font-medium text-sm text-muted-foreground mb-3">Property Details</h6>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          <div className="sm:col-span-3">
+                            <CopyableField label="Property Address" value={rent.propertyAddress} />
+                          </div>
+                          <CopyableField label="Property Type" value={rent.propertyType} />
+                          <CopyableField label="Ownership %" value={`${rent.ownershipPercentage}%`} />
+                          <CopyableField label="Number of Units" value={rent.numberOfUnits?.toString() || 'N/A'} />
+                          <CopyableField label="Personal Use Portion" value={rent.personalUsePortion || 'N/A'} />
+                          <CopyableField label="Gov't Income (Rental)" value={rent.anyGovtIncomeRelatingToRental || 'N/A'} />
+                        </div>
                       </div>
-                      <CopyableField label="Property Type" value={rent.propertyType} />
-                      <CopyableField label="Ownership %" value={`${rent.ownershipPercentage}%`} />
-                      <CopyableField label="Gross Rental Income" value={formatCurrency(rent.grossRentalIncome)} />
-                      <CopyableField label="Property Taxes" value={formatCurrency(rent.propertyTaxes)} />
-                      <CopyableField label="Insurance" value={formatCurrency(rent.insurance)} />
-                      <CopyableField label="Mortgage Interest" value={formatCurrency(rent.mortgageInterest)} />
-                      <CopyableField label="Repairs & Maintenance" value={formatCurrency(rent.repairsAndMaintenance)} />
-                      <CopyableField label="Utilities" value={formatCurrency(rent.utilities)} />
-                      <CopyableField label="Management Fees" value={formatCurrency(rent.managementFees)} />
-                      <CopyableField label="Other Expenses" value={formatCurrency(rent.otherExpenses)} />
-                      <CopyableField label="Total Expenses" value={formatCurrency(rent.totalExpenses)} />
-                      <CopyableField label="Net Rental Income" value={formatCurrency(rent.netRentalIncome)} />
+
+                      {/* Co-owners */}
+                      {(rent.coOwnerPartner1 || rent.coOwnerPartner2 || rent.coOwnerPartner3) && (
+                        <div>
+                          <h6 className="font-medium text-sm text-muted-foreground mb-3">Co-owners</h6>
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            {rent.coOwnerPartner1 && <CopyableField label="Co-owner 1" value={rent.coOwnerPartner1} />}
+                            {rent.coOwnerPartner2 && <CopyableField label="Co-owner 2" value={rent.coOwnerPartner2} />}
+                            {rent.coOwnerPartner3 && <CopyableField label="Co-owner 3" value={rent.coOwnerPartner3} />}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Income & Expenses */}
+                      <div>
+                        <h6 className="font-medium text-sm text-muted-foreground mb-3">Income & Expenses</h6>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          <CopyableField label="Gross Rental Income" value={formatCurrency(rent.grossRentalIncome)} className="font-medium" />
+                          <CopyableField label="Property Taxes" value={formatCurrency(rent.propertyTaxes)} />
+                          <CopyableField label="Insurance" value={formatCurrency(rent.insurance)} />
+                          <CopyableField label="Mortgage Interest" value={formatCurrency(rent.mortgageInterest)} />
+                          <CopyableField label="Repairs & Maintenance" value={formatCurrency(rent.repairsAndMaintenance)} />
+                          <CopyableField label="Utilities" value={formatCurrency(rent.utilities)} />
+                          <CopyableField label="Management Fees" value={formatCurrency(rent.managementFees)} />
+                          <CopyableField label="Cleaning Expense" value={formatCurrency(rent.cleaningExpense)} />
+                          <CopyableField label="Motor Vehicle Expenses" value={formatCurrency(rent.motorVehicleExpenses)} />
+                          <CopyableField label="Legal / Professional Fees" value={formatCurrency(rent.legalProfessionalFees)} />
+                          <CopyableField label="Advertising & Promotion" value={formatCurrency(rent.advertisingPromotion)} />
+                          <CopyableField label="Other Expenses" value={formatCurrency(rent.otherExpenses)} />
+                          <CopyableField label="Total Expenses" value={formatCurrency(rent.totalExpenses)} className="font-medium" />
+                          <CopyableField label="Net Rental Income" value={formatCurrency(rent.netRentalIncome)} className="font-semibold" />
+                        </div>
+                      </div>
+
+                      {/* Property Purchase Details */}
+                      {(rent.purchasePrice || rent.purchaseDate) && (
+                        <div>
+                          <h6 className="font-medium text-sm text-muted-foreground mb-3">Purchase Details</h6>
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            {rent.purchaseDate && <CopyableField label="Purchase Date" value={formatDate(rent.purchaseDate)} />}
+                            {rent.purchasePrice && <CopyableField label="Purchase Price" value={formatCurrency(rent.purchasePrice)} />}
+                            {rent.additionDeletionAmount && <CopyableField label="Addition / Deletion Amount" value={formatCurrency(rent.additionDeletionAmount)} />}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -663,15 +828,22 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
         applicable={!!formData.childrenCredits?.length}
         sectionData={formData.childrenCredits as unknown as Record<string, unknown>}
       >
-        <CopyableTable
-          columns={[
-            { key: 'instituteName', header: 'Institute Name' },
-            { key: 'programDescription', header: 'Description' },
-            { key: 'amountPaid', header: 'Amount', format: (v) => formatCurrency(v as number) },
-          ]}
-          data={formData.childrenCredits || []}
-          emptyMessage="No children's activities reported"
-        />
+        {formData.childrenCredits?.map((credit, idx) => (
+          <div key={credit.id} className="mb-6 last:mb-0">
+            <h4 className="font-medium text-sm mb-3">Activity {idx + 1}</h4>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <CopyableField label="Child Name" value={credit.childName} />
+              <CopyableField label="Child Date of Birth" value={formatDate(credit.childDOB)} />
+              <CopyableField label="Activity Type" value={credit.activityType} />
+              <CopyableField label="Institute Name" value={credit.instituteName} />
+              <div className="sm:col-span-2">
+                <CopyableField label="Program Description" value={credit.programDescription} />
+              </div>
+              <CopyableField label="Amount Paid" value={formatCurrency(credit.amountPaid)} />
+            </div>
+            {idx < (formData.childrenCredits?.length || 0) - 1 && <Separator className="mt-6" />}
+          </div>
+        ))}
       </T1CRASection>
 
       {/* Q18: Rent or Property Tax (Ontario/Alberta/Quebec) */}

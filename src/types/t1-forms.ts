@@ -10,7 +10,10 @@ export interface T1FormData {
   movingExpenses?: T1MovingExpenses;
   spouseMovingExpenses?: T1MovingExpenses;
   selfEmployment?: T1SelfEmployment;
+  firstHomeBuyer?: T1FirstHomeBuyer;
   capitalGains?: T1CapitalGain[];
+  capitalGainsLongTerm?: T1CapitalGainLongTerm[];
+  capitalGainsShortTerm?: T1CapitalGainShortTerm[];
   workFromHome?: T1WorkFromHome;
   tuition?: T1Tuition[];
   unionDues?: T1UnionDues[];
@@ -20,6 +23,8 @@ export interface T1FormData {
   professionalDues?: T1ProfessionalDues[];
   childrenCredits?: T1ChildrenCredit[];
   rentPropertyTax?: T1RentPropertyTax;
+  disabilityTaxCredit?: T1DisabilityTaxCredit[];
+  deceasedReturn?: T1DeceasedReturn;
   rrspContributions?: T1RRSPContribution[];
   employmentIncome?: T1EmploymentIncome[];
   investmentIncome?: T1InvestmentIncome[];
@@ -27,11 +32,13 @@ export interface T1FormData {
 
 export interface T1PersonalInfo {
   firstName: string;
+  middleName?: string;
   lastName: string;
   sin: string;
   dateOfBirth: string;
   maritalStatus: string;
-  canadianCitizen: boolean;
+  isCanadianCitizen: boolean;
+  canadianCitizen: boolean; // Keep for backward compat
   currentAddress: {
     street: string;
     city: string;
@@ -53,6 +60,20 @@ export interface T1PersonalInfo {
     transitNumber: string;
     accountNumber: string;
   };
+  spouseInfo?: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    sin: string;
+    dateOfBirth: string;
+  };
+  children?: Array<{
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    sin?: string;
+    dateOfBirth: string;
+  }>;
 }
 
 export interface T1ForeignProperty {
@@ -88,31 +109,31 @@ export interface T1CharitableDonation {
 
 export interface T1MovingExpenses {
   applicable: boolean;
-  oldAddress: {
-    street: string;
-    city: string;
-    province: string;
-    postalCode: string;
-  };
-  newAddress: {
-    street: string;
-    city: string;
-    province: string;
-    postalCode: string;
-  };
-  distanceOldToOldOffice: number;
-  distanceNewToNewOffice: number;
-  airTicketsCost: number;
-  travelMealsCost: number;
-  moversPackersCost: number;
-  temporaryLodgingCost: number;
-  otherMovingCosts: number;
-  totalMovingCost: number;
+  oldAddress: string;
+  newAddress: string;
+  distanceFromOldToNew: string;
+  distanceFromNewToOffice: string;
+  airTicketCost: number;
+  moversAndPackers: number;
+  mealsAndOtherCost: number;
+  anyOtherCost: number;
   dateOfTravel: string;
-  dateJoinedCompany: string;
+  dateOfJoining: string;
   companyName: string;
-  employerAddress: string;
-  incomeEarnedAfterMove: number;
+  newEmployerAddress: string;
+  grossIncomeAfterMoving: number;
+  // Legacy fields for backward compat
+  distanceOldToOldOffice?: number;
+  distanceNewToNewOffice?: number;
+  airTicketsCost?: number;
+  travelMealsCost?: number;
+  moversPackersCost?: number;
+  temporaryLodgingCost?: number;
+  otherMovingCosts?: number;
+  totalMovingCost?: number;
+  dateJoinedCompany?: string;
+  employerAddress?: string;
+  incomeEarnedAfterMove?: number;
 }
 
 export interface T1SelfEmployment {
@@ -121,18 +142,122 @@ export interface T1SelfEmployment {
   hasRentalIncome: boolean;
   uberIncome?: T1UberIncome;
   businessIncome?: T1BusinessIncome;
+  generalBusiness?: T1GeneralBusiness;
   rentalIncome?: T1RentalIncome[];
 }
 
-export interface T1UberIncome {
+export interface T1GeneralBusiness {
+  clientName?: string;
+  businessName: string;
+  businessType?: string;
+  businessNumber?: string;
+  // Income & COGS
+  salesCommissionsFees: number;
+  minusHstCollected: number;
   grossIncome: number;
+  openingInventory: number;
+  purchasesDuringYear: number;
+  subcontracts: number;
+  directWageCosts: number;
+  otherCosts: number;
+  purchaseReturns: number;
+  // Operating Expenses
+  advertising: number;
+  mealsEntertainment: number;
+  badDebts: number;
+  insurance: number;
+  interest: number;
+  feesLicensesDues: number;
+  officeExpenses: number;
+  supplies: number;
+  legalAccountingFees: number;
+  managementAdministration: number;
+  officeRent: number;
+  maintenanceRepairs: number;
+  salariesWagesBenefits: number;
+  propertyTax: number;
+  travel: number;
+  telephoneUtilities: number;
+  fuelCosts: number;
+  deliveryFreightExpress: number;
+  otherExpense1: number;
+  otherExpense2: number;
+  otherExpense3: number;
+  // Home Office
+  areaOfHomeForBusiness: string;
+  totalAreaOfHome: string;
+  heat: number;
+  electricity: number;
+  houseInsurance: number;
+  homeMaintenance: number;
+  mortgageInterest: number;
+  propertyTaxes: number;
+  houseRent: number;
+  homeOtherExpense1: number;
+  homeOtherExpense2: number;
+  // Vehicle
+  kmDrivenForBusiness: number;
+  totalKmDrivenInYear: number;
+  vehicleFuel: number;
+  vehicleInsurance: number;
+  licenseRegistration: number;
+  vehicleMaintenance: number;
+  businessParking: number;
+  vehicleOtherExpense: number;
+  leasingFinancePayments: number;
+  // Calculated
+  totalExpenses: number;
+  netIncome: number;
+}
+
+export interface T1BusinessIncome {
+  businessName: string;
+  businessType: string;
+  businessNumber: string;
+  grossRevenue: number;
+  costOfGoodsSold: number;
+  advertisingExpenses: number;
+  officeExpenses: number;
+  professionalFees: number;
+  travelExpenses: number;
   vehicleExpenses: number;
-  phoneExpenses: number;
-  suppliesExpenses: number;
   otherExpenses: number;
   totalExpenses: number;
   netIncome: number;
-  kmDriven: number;
+}
+
+export interface T1UberIncome {
+  uberSkipStatement?: string;
+  businessHstNumber?: string;
+  hstAccessCode?: string;
+  hstFillingPeriod?: string;
+  income: number;
+  totalKmForUberSkip: number;
+  totalOfficialKmDriven: number;
+  totalKmDrivenEntireYear: number;
+  businessNumberVehicleRegistration?: string;
+  meals: number;
+  telephone: number;
+  parkingFees: number;
+  cleaningExpenses: number;
+  safetyInspection: number;
+  winterTireChange: number;
+  oilChangeAndMaintenance: number;
+  depreciation: number;
+  insuranceOnVehicle: number;
+  gas: number;
+  financingCostInterest: number;
+  leaseCost: number;
+  otherExpense: number;
+  totalExpenses: number;
+  netIncome: number;
+  // Legacy fields for backward compat
+  grossIncome?: number;
+  vehicleExpenses?: number;
+  phoneExpenses?: number;
+  suppliesExpenses?: number;
+  otherExpenses?: number;
+  kmDriven?: number;
 }
 
 export interface T1BusinessIncome {
@@ -154,16 +279,32 @@ export interface T1BusinessIncome {
 export interface T1RentalIncome {
   id: string;
   propertyAddress: string;
+  coOwnerPartner1?: string;
+  coOwnerPartner2?: string;
+  coOwnerPartner3?: string;
+  numberOfUnits: number;
   propertyType: string;
   ownershipPercentage: number;
   grossRentalIncome: number;
+  anyGovtIncomeRelatingToRental?: number;
+  personalUsePortion?: string;
+  houseInsurance: number;
   propertyTaxes: number;
   insurance: number;
   mortgageInterest: number;
   repairsAndMaintenance: number;
   utilities: number;
   managementFees: number;
+  managementAdminFees?: number;
+  cleaningExpense?: number;
+  motorVehicleExpenses?: number;
+  legalProfessionalFees?: number;
+  advertisingPromotion?: number;
   otherExpenses: number;
+  otherExpense?: number;
+  purchasePrice?: number;
+  purchaseDate?: string;
+  additionDeletionAmount?: number;
   totalExpenses: number;
   netRentalIncome: number;
 }
@@ -321,6 +462,46 @@ export interface T1InvestmentIncome {
   capitalGainsDistributions?: number;
   returnOfCapital?: number;
   acbAdjustment?: number;
+}
+
+export interface T1FirstHomeBuyer {
+  propertyAddress: string;
+  purchaseDate: string;
+  purchasePrice: number;
+}
+
+export interface T1CapitalGainLongTerm {
+  id: string;
+  propertyAddress: string;
+  purchaseDate: string;
+  sellDate: string;
+  purchaseAndSellExpenses: number;
+  capitalGainEarned: number;
+}
+
+export interface T1CapitalGainShortTerm {
+  id: string;
+  propertyAddress: string;
+  purchaseDate: string;
+  sellDate: string;
+  purchaseAndSellExpenses: number;
+}
+
+export interface T1DisabilityTaxCredit {
+  firstName: string;
+  lastName: string;
+  relation: string;
+  approvedYear: number;
+}
+
+export interface T1DeceasedReturn {
+  deceasedFullName: string;
+  dateOfDeath: string;
+  deceasedSin: string;
+  deceasedMailingAddress: string;
+  legalRepresentativeName: string;
+  legalRepresentativeContactNumber: string;
+  legalRepresentativeAddress: string;
 }
 
 // CRA Line Number Mapping for T1 Summary
