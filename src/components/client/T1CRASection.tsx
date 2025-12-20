@@ -10,7 +10,6 @@ interface T1CRASectionProps {
   title: string;
   icon?: React.ReactNode;
   applicable: boolean;
-  craLines?: string[];
   children: React.ReactNode;
   className?: string;
   defaultExpanded?: boolean;
@@ -21,7 +20,6 @@ export function T1CRASection({
   title,
   icon,
   applicable,
-  craLines,
   children,
   className,
   defaultExpanded = true,
@@ -94,18 +92,6 @@ export function T1CRASection({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {craLines && craLines.length > 0 && (
-              <div className="flex items-center gap-1">
-                {craLines.map((line) => (
-                  <span
-                    key={line}
-                    className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary"
-                  >
-                    {line}
-                  </span>
-                ))}
-              </div>
-            )}
             {applicable && sectionData && (
               <Button
                 variant="outline"

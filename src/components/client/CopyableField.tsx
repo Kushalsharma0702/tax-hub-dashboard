@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 interface CopyableFieldProps {
   label: string;
   value: string | number | undefined | null;
-  craLine?: string;
   className?: string;
   labelClassName?: string;
   valueClassName?: string;
@@ -17,7 +16,6 @@ interface CopyableFieldProps {
 export function CopyableField({
   label,
   value,
-  craLine,
   className,
   labelClassName,
   valueClassName,
@@ -59,16 +57,9 @@ export function CopyableField({
       )}
     >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          {craLine && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
-              Line {craLine}
-            </span>
-          )}
-          <span className={cn('text-sm text-muted-foreground truncate', labelClassName)}>
-            {label}
-          </span>
-        </div>
+        <span className={cn('text-sm text-muted-foreground truncate block', labelClassName)}>
+          {label}
+        </span>
         <p
           className={cn(
             'font-medium mt-0.5 truncate',
