@@ -325,8 +325,8 @@ export function T1CRAReadyForm({ clientId, filingYear }: T1CRAReadyFormProps) {
             <div>
               <h4 className="font-medium text-sm text-muted-foreground mb-3">Addresses & Distances</h4>
               <div className="grid gap-3">
-                <CopyableField label="Old Address" value={formData.movingExpenses.oldAddress} />
-                <CopyableField label="New Address" value={formData.movingExpenses.newAddress} />
+                <CopyableField label="Old Address" value={typeof formData.movingExpenses.oldAddress === 'string' ? formData.movingExpenses.oldAddress : `${formData.movingExpenses.oldAddress.street}, ${formData.movingExpenses.oldAddress.city}, ${formData.movingExpenses.oldAddress.province} ${formData.movingExpenses.oldAddress.postalCode}`} />
+                <CopyableField label="New Address" value={typeof formData.movingExpenses.newAddress === 'string' ? formData.movingExpenses.newAddress : `${formData.movingExpenses.newAddress.street}, ${formData.movingExpenses.newAddress.city}, ${formData.movingExpenses.newAddress.province} ${formData.movingExpenses.newAddress.postalCode}`} />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <CopyableField label="Distance Old → New" value={formData.movingExpenses.distanceFromOldToNew} />
                   <CopyableField label="Distance New → Office" value={formData.movingExpenses.distanceFromNewToOffice} />

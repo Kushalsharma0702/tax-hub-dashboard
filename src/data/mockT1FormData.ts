@@ -1235,19 +1235,6 @@ export const mockT1FormData: Record<string, T1FormData> = {
         gainLoss: 125000,
       },
     ],
-    foreignIncome: [
-      {
-        id: 'fi1',
-        country: 'USA',
-        incomeType: 'Consulting Income',
-        description: 'Software Consulting for US Clients',
-        amount: 1850000,
-        foreignTaxPaid: 277500,
-        eligibleForTaxCredit: true,
-        dtaaApplicable: true,
-        dtaaArticle: 'Article 14 - Independent Personal Services',
-      },
-    ],
     rrspContributions: [
       {
         id: 'rrsp1',

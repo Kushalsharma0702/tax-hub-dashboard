@@ -73,6 +73,12 @@ export interface Document {
   notes?: string;
   questionId?: string; // Links document to specific questionnaire question
   url?: string; // URL to the document file
+  sectionKey?: string; // Links document to a specific T1 section (e.g., 'employment_income', 'medical_expenses')
+  fileType?: 'pdf' | 'image' | 'other';
+  fileSize?: number;
+  isMissing?: boolean;
+  requestedAt?: Date;
+  requestMessage?: string;
 }
 
 export interface PersonalInfo {
