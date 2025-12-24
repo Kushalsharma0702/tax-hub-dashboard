@@ -37,8 +37,8 @@ export interface T1PersonalInfo {
   sin: string;
   dateOfBirth: string;
   maritalStatus: string;
-  isCanadianCitizen: boolean;
-  canadianCitizen: boolean; // Keep for backward compat
+  isCanadianCitizen?: boolean;
+  canadianCitizen?: boolean; // Keep for backward compat
   currentAddress: {
     street: string;
     city: string;
@@ -112,19 +112,19 @@ export interface T1CharitableDonation {
 
 export interface T1MovingExpenses {
   applicable: boolean;
-  oldAddress: string;
-  newAddress: string;
-  distanceFromOldToNew: string;
-  distanceFromNewToOffice: string;
-  airTicketCost: number;
-  moversAndPackers: number;
-  mealsAndOtherCost: number;
-  anyOtherCost: number;
-  dateOfTravel: string;
-  dateOfJoining: string;
-  companyName: string;
-  newEmployerAddress: string;
-  grossIncomeAfterMoving: number;
+  oldAddress: string | { street: string; city: string; province: string; postalCode: string };
+  newAddress: string | { street: string; city: string; province: string; postalCode: string };
+  distanceFromOldToNew?: string;
+  distanceFromNewToOffice?: string;
+  airTicketCost?: number;
+  moversAndPackers?: number;
+  mealsAndOtherCost?: number;
+  anyOtherCost?: number;
+  dateOfTravel?: string;
+  dateOfJoining?: string;
+  companyName?: string;
+  newEmployerAddress?: string;
+  grossIncomeAfterMoving?: number;
   // Legacy fields for backward compat
   distanceOldToOldOffice?: number;
   distanceNewToNewOffice?: number;
@@ -215,18 +215,21 @@ export interface T1GeneralBusiness {
 
 export interface T1BusinessIncome {
   businessName: string;
-  businessType: string;
-  businessNumber: string;
-  grossRevenue: number;
-  costOfGoodsSold: number;
-  advertisingExpenses: number;
-  officeExpenses: number;
-  professionalFees: number;
-  travelExpenses: number;
-  vehicleExpenses: number;
-  otherExpenses: number;
-  totalExpenses: number;
-  netIncome: number;
+  businessType?: string;
+  businessNumber?: string;
+  grossRevenue?: number;
+  grossIncome?: number;
+  costOfGoodsSold?: number;
+  advertisingExpenses?: number;
+  officeExpenses?: number;
+  officeSupplies?: number;
+  professionalFees?: number;
+  softwareSubscriptions?: number;
+  travelExpenses?: number;
+  vehicleExpenses?: number;
+  otherExpenses?: number;
+  totalExpenses?: number;
+  netIncome?: number;
 }
 
 export interface T1UberIncome {
@@ -234,26 +237,26 @@ export interface T1UberIncome {
   businessHstNumber?: string;
   hstAccessCode?: string;
   hstFillingPeriod?: string;
-  income: number;
-  totalKmForUberSkip: number;
-  totalOfficialKmDriven: number;
-  totalKmDrivenEntireYear: number;
+  income?: number;
+  totalKmForUberSkip?: number;
+  totalOfficialKmDriven?: number;
+  totalKmDrivenEntireYear?: number;
   businessNumberVehicleRegistration?: string;
-  meals: number;
-  telephone: number;
-  parkingFees: number;
-  cleaningExpenses: number;
-  safetyInspection: number;
-  winterTireChange: number;
-  oilChangeAndMaintenance: number;
-  depreciation: number;
-  insuranceOnVehicle: number;
-  gas: number;
-  financingCostInterest: number;
-  leaseCost: number;
-  otherExpense: number;
-  totalExpenses: number;
-  netIncome: number;
+  meals?: number;
+  telephone?: number;
+  parkingFees?: number;
+  cleaningExpenses?: number;
+  safetyInspection?: number;
+  winterTireChange?: number;
+  oilChangeAndMaintenance?: number;
+  depreciation?: number;
+  insuranceOnVehicle?: number;
+  gas?: number;
+  financingCostInterest?: number;
+  leaseCost?: number;
+  otherExpense?: number;
+  totalExpenses?: number;
+  netIncome?: number;
   // Legacy fields for backward compat
   grossIncome?: number;
   vehicleExpenses?: number;
@@ -261,22 +264,6 @@ export interface T1UberIncome {
   suppliesExpenses?: number;
   otherExpenses?: number;
   kmDriven?: number;
-}
-
-export interface T1BusinessIncome {
-  businessName: string;
-  businessType: string;
-  businessNumber: string;
-  grossRevenue: number;
-  costOfGoodsSold: number;
-  advertisingExpenses: number;
-  officeExpenses: number;
-  professionalFees: number;
-  travelExpenses: number;
-  vehicleExpenses: number;
-  otherExpenses: number;
-  totalExpenses: number;
-  netIncome: number;
 }
 
 export interface T1RentalIncome {
@@ -314,7 +301,7 @@ export interface T1RentalIncome {
 
 export interface T1CapitalGain {
   id: string;
-  assetType: 'residential_property' | 'stocks' | 'mutual_funds' | 'crypto' | 'other';
+  assetType: 'residential_property' | 'real_estate' | 'stocks' | 'mutual_funds' | 'crypto' | 'other';
   propertyAddress?: string;
   description: string;
   purchaseDate: string;
@@ -417,7 +404,7 @@ export interface T1ChildrenCredit {
 export interface T1RentPropertyTax {
   rentOrOwn: 'rent' | 'own';
   propertyAddress: string;
-  province: 'ON' | 'AB' | 'QC' | 'other';
+  province: string;
   rentAmount?: number;
   propertyTaxAmount?: number;
   landlordName?: string;
@@ -451,13 +438,13 @@ export interface T1EmploymentIncome {
   t4Box44?: number; // Union Dues
   t4Box46?: number; // Charitable Donations
   t4Box52?: number; // Pension Adjustment
-  slipType: 'T4' | 'T4A' | 'T4E';
+  slipType: string;
 }
 
 export interface T1InvestmentIncome {
   id: string;
   institutionName: string;
-  slipType: 'T5' | 'T3' | 'T5008';
+  slipType: string;
   interestIncome?: number;
   dividendsEligible?: number;
   dividendsOther?: number;

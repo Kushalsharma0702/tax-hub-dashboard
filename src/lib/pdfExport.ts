@@ -265,7 +265,7 @@ export async function exportClientPDF(options: PDFExportOptions): Promise<void> 
   }
 
   // Footer on each page
-  const pageCount = doc.getNumberOfPages();
+  const pageCount = (doc as any).internal.getNumberOfPages?.() || (doc as any).getNumberOfPages?.() || 1;
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
