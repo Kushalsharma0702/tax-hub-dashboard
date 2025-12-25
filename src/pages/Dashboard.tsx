@@ -18,12 +18,23 @@ export default function Dashboard() {
   const { user, isSuperAdmin } = useAuth();
   const analytics = getAnalyticsData();
   const navigate = useNavigate();
-  const { setSteps } = useTour();
+  const { setSteps, startTour, hasCompletedTour, steps } = useTour();
 
   // Initialize tour steps when component mounts
   useEffect(() => {
     setSteps(dashboardTourSteps);
   }, [setSteps]);
+
+  // Auto-start tour for first-time users
+  useEffect(() => {
+    if (!hasCompletedTour && steps.length > 0) {
+      // Small delay to ensure DOM elements are ready
+      const timer = setTimeout(() => {
+        startTour();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [hasCompletedTour, steps.length, startTour]);
 
   const recentClients = mockClients.slice(0, 5);
 
