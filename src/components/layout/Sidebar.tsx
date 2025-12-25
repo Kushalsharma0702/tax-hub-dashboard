@@ -40,8 +40,24 @@ export function Sidebar() {
     return true;
   });
 
+  // Map navigation items to tour IDs
+  const getTourId = (name: string) => {
+    const tourMap: Record<string, string> = {
+      'Dashboard': 'nav-dashboard',
+      'Clients': 'nav-clients',
+      'Documents': 'nav-documents',
+      'Payments': 'nav-payments',
+      'Analytics': 'nav-analytics',
+      'Admin Management': 'nav-admins',
+      'Audit Logs': 'nav-audit',
+      'Settings': 'nav-settings',
+    };
+    return tourMap[name] || '';
+  };
+
   return (
     <aside
+      data-tour="sidebar"
       className={cn(
         'fixed left-0 top-0 z-40 h-screen bg-card border-r border-border transition-all duration-300 ease-in-out',
         collapsed ? 'w-16' : 'w-64'
@@ -62,6 +78,7 @@ export function Sidebar() {
               <Link
                 key={item.name}
                 to={item.href}
+                data-tour={getTourId(item.name)}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                   isActive

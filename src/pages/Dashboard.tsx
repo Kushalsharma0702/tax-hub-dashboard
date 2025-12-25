@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useTour } from '@/components/tour';
+import { dashboardTourSteps } from '@/config/tourSteps';
 
 const COLORS = ['hsl(200, 98%, 39%)', 'hsl(213, 93%, 67%)', 'hsl(215, 20%, 65%)', 'hsl(215, 16%, 46%)', 'hsl(120, 40%, 50%)'];
 
@@ -15,6 +18,12 @@ export default function Dashboard() {
   const { user, isSuperAdmin } = useAuth();
   const analytics = getAnalyticsData();
   const navigate = useNavigate();
+  const { setSteps } = useTour();
+
+  // Initialize tour steps when component mounts
+  useEffect(() => {
+    setSteps(dashboardTourSteps);
+  }, [setSteps]);
 
   const recentClients = mockClients.slice(0, 5);
 

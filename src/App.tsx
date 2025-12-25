@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { TourProvider, TourOverlay } from "@/components/tour";
 
 // Pages
 import Login from "./pages/Login";
@@ -28,10 +29,12 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+          <TourProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <TourOverlay />
+              <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/login" element={<Login />} />
@@ -107,13 +110,14 @@ const App = () => (
                     </ProtectedRoute>
                   } 
                 />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </TourProvider>
+    </AuthProvider>
+  </ThemeProvider>
+</QueryClientProvider>
   </ErrorBoundary>
 );
 
