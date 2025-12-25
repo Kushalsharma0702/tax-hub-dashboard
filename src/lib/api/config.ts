@@ -22,8 +22,7 @@ const getBaseUrl = (): string => {
     return import.meta.env.VITE_PRODUCTION_API_URL || 'https://api.taxhub.com/api/v1';
   }
   
-  // Development - use ngrok URL
-  return 'https://5e44859cea61.ngrok-free.app/api/v1';
+  return 'http://localhost:8001/api/v1';
 };
 
 export const API_CONFIG = {
@@ -45,97 +44,115 @@ export const API_CONFIG = {
 /**
  * API Endpoint Groups
  * Organized by domain for maintainability
- * Matches backend API structure
  */
 export const API_ENDPOINTS = {
-  // Client Authentication endpoints
+  // Authentication endpoints
   AUTH: {
     LOGIN: '/auth/login',
     LOGOUT: '/auth/logout',
+    REFRESH: '/auth/refresh',
     REGISTER: '/auth/register',
-    REQUEST_OTP: '/auth/request-otp',
-    VERIFY_OTP: '/auth/verify-otp',
-    ME: '/client/me',
-  },
-
-  // Admin Authentication endpoints
-  ADMIN_AUTH: {
-    LOGIN: '/admin/auth/login',
-    LOGOUT: '/admin/auth/logout',
-    REGISTER: '/admin/auth/register',
-    ME: '/admin/auth/me',
-    REFRESH_SESSION: '/admin/auth/refresh-session',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_EMAIL: '/auth/verify-email',
+    ME: '/auth/me',
   },
 
   // Admin endpoints
   ADMIN: {
-    LIST: '/admin/admin-users',
-    CLIENTS: '/admin/clients',
-    CLIENT: (id: string) => `/admin/clients/${id}`,
-    DOCUMENTS: '/admin/documents',
-    DOCUMENT: (id: string) => `/admin/documents/${id}`,
-    PAYMENTS: '/admin/payments',
-    ANALYTICS: '/admin/analytics',
+    LIST: '/admin/users',
+    CREATE: '/admin/users',
+    GET: (id: string) => `/admin/users/${id}`,
+    UPDATE: (id: string) => `/admin/users/${id}`,
+    DELETE: (id: string) => `/admin/users/${id}`,
+    PERMISSIONS: '/admin/permissions',
+    ROLES: '/admin/roles',
   },
 
-  // Client endpoints (for admin use)
+  // Client endpoints
   CLIENT: {
-    LIST: '/admin/clients',
-    CREATE: '/client/add',
-    GET: (id: string) => `/admin/clients/${id}`,
-    UPDATE: (id: string) => `/admin/clients/${id}`,
-    DELETE: (id: string) => `/client/${id}`,
-    ME: '/client/me',
+    LIST: '/clients',
+    CREATE: '/clients',
+    GET: (id: string) => `/clients/${id}`,
+    UPDATE: (id: string) => `/clients/${id}`,
+    DELETE: (id: string) => `/clients/${id}`,
+    SEARCH: '/clients/search',
+    EXPORT: (id: string) => `/clients/${id}/export`,
+    
+    // Nested resources
+    NOTES: (clientId: string) => `/clients/${clientId}/notes`,
+    NOTE: (clientId: string, noteId: string) => `/clients/${clientId}/notes/${noteId}`,
+    PAYMENTS: (clientId: string) => `/clients/${clientId}/payments`,
+    PAYMENT: (clientId: string, paymentId: string) => `/clients/${clientId}/payments/${paymentId}`,
   },
 
   // Document endpoints
   DOCUMENTS: {
-    LIST: '/admin/documents',
+    LIST: '/documents',
     UPLOAD: '/documents/upload',
     GET: (id: string) => `/documents/${id}`,
     DELETE: (id: string) => `/documents/${id}`,
     DOWNLOAD: (id: string) => `/documents/${id}/download`,
     BY_CLIENT: (clientId: string) => `/documents/client/${clientId}`,
-    UPDATE_STATUS: (id: string) => `/admin/documents/${id}`,
+    BY_SECTION: (clientId: string, sectionKey: string) => `/documents/client/${clientId}/section/${sectionKey}`,
+    MARK_MISSING: (id: string) => `/documents/${id}/mark-missing`,
+    REQUEST: '/documents/request',
+    VERIFY: (id: string) => `/documents/${id}/verify`,
   },
 
   // Filing Status endpoints
   FILING: {
-    GET_CLIENT: (clientId: string) => `/filing-status/client/${clientId}`,
-    UPDATE_ADMIN: (returnId: string) => `/filing-status/admin/${returnId}/status`,
-    GET_ALL_RETURNS: '/filing-status/admin/returns',
+    GET: (clientId: string) => `/filing-status/${clientId}`,
+    UPDATE: (clientId: string) => `/filing-status/${clientId}`,
+    HISTORY: (clientId: string) => `/filing-status/${clientId}/history`,
+    BULK_UPDATE: '/filing-status/bulk-update',
   },
 
-  // T1 Tax Form endpoints
-  T1: {
-    SUBMIT: '/t1/tax-return',
-    GET: '/t1/tax-return',
+  // Tax Files endpoints
+  TAX_FILES: {
+    LIST: (clientId: string) => `/tax-files/client/${clientId}`,
+    UPLOAD: '/tax-files/upload',
+    GET: (id: string) => `/tax-files/${id}`,
+    DELETE: (id: string) => `/tax-files/${id}`,
+    SEND_FOR_APPROVAL: (id: string) => `/tax-files/${id}/send-approval`,
+    APPROVE: (id: string) => `/tax-files/${id}/approve`,
+    REJECT: (id: string) => `/tax-files/${id}/reject`,
   },
 
-  // Chat endpoints
-  CHAT: {
-    SEND: '/chat/send',
-    GET_MESSAGES: (clientId: string) => `/chat/${clientId}`,
-    MARK_READ: (clientId: string) => `/chat/${clientId}/mark-read`,
-    UNREAD_COUNT: (clientId: string) => `/chat/${clientId}/unread-count`,
+  // Payment Request endpoints
+  PAYMENT_REQUESTS: {
+    LIST: '/payment-requests',
+    CREATE: '/payment-requests',
+    GET: (id: string) => `/payment-requests/${id}`,
+    UPDATE: (id: string) => `/payment-requests/${id}`,
+    MARK_RECEIVED: (id: string) => `/payment-requests/${id}/mark-received`,
+    SEND: (id: string) => `/payment-requests/${id}/send`,
   },
 
-  // Payment endpoints
-  PAYMENTS: {
-    LIST: '/admin/payments',
-    CREATE: '/admin/payments',
-    GET: (id: string) => `/admin/payments/${id}`,
-    BY_CLIENT: (clientId: string) => `/admin/payments?client_id=${clientId}`,
+  // Notifications endpoints
+  NOTIFICATIONS: {
+    LIST: '/notifications',
+    GET: (id: string) => `/notifications/${id}`,
+    MARK_READ: (id: string) => `/notifications/${id}/read`,
+    MARK_ALL_READ: '/notifications/mark-all-read',
+    DELETE: (id: string) => `/notifications/${id}`,
+    PREFERENCES: '/notifications/preferences',
   },
 
   // Analytics & Reports
   ANALYTICS: {
-    DASHBOARD: '/admin/analytics',
+    DASHBOARD: '/analytics/dashboard',
+    CLIENTS: '/analytics/clients',
+    REVENUE: '/analytics/revenue',
+    DOCUMENTS: '/analytics/documents',
+    EXPORT: '/analytics/export',
   },
 
   // Health & System
   SYSTEM: {
-    HEALTH: '/',
+    HEALTH: '/health',
+    VERSION: '/version',
+    CONFIG: '/config',
   },
 } as const;
 
@@ -175,7 +192,6 @@ export function getDefaultHeaders(authToken?: string): HeadersInit {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
   };
   
   if (authToken) {
