@@ -114,9 +114,8 @@ export default function Login() {
           <div className="mt-6 p-4 rounded-lg bg-muted/50 text-sm animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <p className="font-medium mb-2">Demo Credentials:</p>
             <div className="space-y-1 text-muted-foreground">
-              <p><strong>Superadmin:</strong> superadmin@taxease.ca</p>
-              <p><strong>Admin:</strong> admin@taxease.ca</p>
-              <p><strong>Password:</strong> demo123</p>
+              <p><strong>Superadmin:</strong> superadmin@taxease.com / Super123!</p>
+              <p><strong>Admin:</strong> admin@taxease.com / Admin123!</p>
             </div>
           </div>
         </CardContent>

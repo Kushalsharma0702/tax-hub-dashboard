@@ -6,7 +6,7 @@
  * Includes CORS support for cross-origin requests to the backend.
  */
 
-import { API_CONFIG, buildUrl, getDefaultHeaders } from './config';
+import { API_CONFIG, buildUrl } from './config';
 
 export interface ApiResponse<T> {
   data: T;
@@ -33,11 +33,12 @@ export interface ApiError {
  */
 const getCorsOptions = (): RequestInit => ({
   mode: 'cors',
-  credentials: 'include', // Include cookies for cross-origin requests
+  credentials: 'omit', // Don't send cookies for cross-origin requests to avoid CORS preflight issues
 });
 
 class ApiClient {
   private authToken: string | null = null;
+  private sessionId: string | null = null;
 
   setAuthToken(token: string | null): void {
     this.authToken = token;
@@ -49,6 +50,15 @@ class ApiClient {
     }
   }
 
+  setSessionId(sessionId: string | null): void {
+    this.sessionId = sessionId;
+    if (sessionId) {
+      localStorage.setItem('session_id', sessionId);
+    } else {
+      localStorage.removeItem('session_id');
+    }
+  }
+
   getAuthToken(): string | null {
     if (!this.authToken) {
       // Try to recover from localStorage
@@ -57,10 +67,18 @@ class ApiClient {
     return this.authToken;
   }
 
+  getSessionId(): string | null {
+    if (!this.sessionId) {
+      this.sessionId = localStorage.getItem('session_id');
+    }
+    return this.sessionId;
+  }
+
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
     };
     
     const token = this.getAuthToken();
@@ -86,7 +104,7 @@ class ApiClient {
       }
 
       const error: ApiError = {
-        message: (errorData.message as string) || (errorData.error as string) || `HTTP Error: ${response.status} ${response.statusText}`,
+        message: (errorData.detail as string) || (errorData.message as string) || (errorData.error as string) || `HTTP Error: ${response.status} ${response.statusText}`,
         code: (errorData.code as string) || response.status.toString(),
         status: response.status,
         details: errorData.details as Record<string, unknown>,
@@ -96,11 +114,12 @@ class ApiClient {
       if (response.status === 401) {
         // Clear auth token on unauthorized
         this.setAuthToken(null);
+        this.setSessionId(null);
         error.message = 'Session expired. Please log in again.';
       } else if (response.status === 403) {
         error.message = 'You do not have permission to perform this action.';
       } else if (response.status === 404) {
-        error.message = (errorData.message as string) || 'Resource not found.';
+        error.message = (errorData.detail as string) || (errorData.message as string) || 'Resource not found.';
       } else if (response.status >= 500) {
         error.message = 'Server error. Please try again later.';
       }
@@ -239,6 +258,7 @@ class ApiClient {
 
     const headers: HeadersInit = {
       'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
     };
     const token = this.getAuthToken();
     if (token) {
@@ -258,11 +278,28 @@ class ApiClient {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      await this.get('/health');
-      return true;
+      const url = buildUrl('/').replace('/api/v1/', '/');
+      const response = await fetch(url, {
+        ...getCorsOptions(),
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+      return response.ok;
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Clear all auth data
+   */
+  clearAuth(): void {
+    this.authToken = null;
+    this.sessionId = null;
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('session_id');
+    localStorage.removeItem('user_data');
   }
 }
 
