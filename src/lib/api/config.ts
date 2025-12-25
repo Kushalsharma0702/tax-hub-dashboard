@@ -11,19 +11,29 @@
  */
 
 // Base URL configuration - uses environment variables with fallbacks
+const DEFAULT_API_BASE_URL = 'https://5e44859cea61.ngrok-free.app/api/v1';
+
+const ensureApiBaseUrl = (url: string): string => {
+  const trimmed = url.replace(/\/$/, '');
+  // If already points at the versioned API base, keep it.
+  if (/\/api\/v\d+$/i.test(trimmed)) return trimmed;
+  // Otherwise append the expected API base path.
+  return `${trimmed}/api/v1`;
+};
+
+// Base URL configuration - uses environment variables with fallbacks
 const getBaseUrl = (): string => {
-  // Check for environment-specific URLs
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-  
+  const envUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (envUrl) return ensureApiBaseUrl(envUrl);
+
   // Default based on environment
   if (import.meta.env.MODE === 'production') {
-    return import.meta.env.VITE_PRODUCTION_API_URL || 'https://api.taxhub.com/api/v1';
+    const prodUrl = (import.meta.env.VITE_PRODUCTION_API_URL as string | undefined) || DEFAULT_API_BASE_URL;
+    return ensureApiBaseUrl(prodUrl);
   }
-  
-  // Development - use ngrok URL
-  return 'https://5e44859cea61.ngrok-free.app/api/v1';
+
+  // Development fallback
+  return DEFAULT_API_BASE_URL;
 };
 
 export const API_CONFIG = {
