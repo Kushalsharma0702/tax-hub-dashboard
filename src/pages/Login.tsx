@@ -65,7 +65,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@taxease.ca"
+                placeholder="admin@taxease.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
