@@ -10,9 +10,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Bell, Moon, Sun, LogOut, User, Settings } from 'lucide-react';
+import { Bell, Moon, Sun, LogOut, Settings, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { TourButton } from '@/components/tour';
+import { Input } from '@/components/ui/input';
 
 interface TopBarProps {
   title: string;
@@ -50,13 +52,25 @@ export function TopBar({ title, breadcrumbs }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Search */}
+        <div data-tour="search" className="hidden md:flex items-center relative">
+          <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search clients... (Ctrl+K)"
+            className="w-64 pl-9 bg-muted/50"
+          />
+        </div>
+
+        {/* Tour Button */}
+        <TourButton variant="icon" />
+
         {/* Theme Toggle */}
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+        <Button data-tour="theme-toggle" variant="ghost" size="icon" onClick={toggleTheme}>
           {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
+        <Button data-tour="notifications" variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px]">
             3
@@ -66,7 +80,7 @@ export function TopBar({ title, breadcrumbs }: TopBarProps) {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
+            <Button data-tour="user-menu" variant="ghost" className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                   {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
